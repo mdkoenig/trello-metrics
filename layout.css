@@ -1,0 +1,7 @@
+.ready {
+	background-color: chartreuse;
+}
+
+.notReady {
+	background-color: red;
+}
