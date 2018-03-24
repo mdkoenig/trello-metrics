@@ -1,13 +1,10 @@
-var thign = "add a thing";
-
-// To do "big mama" are cards with more than 50 actions, need to figure out how to handle them
-
-
 // esbalish an object for the cards that exist on trello
 var cards = {"index":[]};
 
 // establish and object of the project-wide metrics
 var metrics = {};
+
+metrics.actionNumber = 0;
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -38,6 +35,40 @@ $('#sprints').on('click', function() {
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// create an onlick function to get the call the actions from a board
+$('#get-board-actions').on('click', function() { 
+	getBoardActions();
+})
+
+// use an ajax call to get the actions from a board
+function getBoardActions() {
+	 $.ajax({
+		url: "https://api.trello.com/1/boards/59b957fde1709e3aae62b5c8/actions?limit=100&filter=all" + key,
+		method: 'GET',
+	}).done(function(result) {
+		console.log(result);
+	}).fail(function(err) {
+		throw err;
+	});
+}
+
+$('#get-board-actions2').on('click', function() { 
+	getBoardActions2();
+})
+
+// use an ajax call to get the actions from a board
+function getBoardActions2() {
+	 $.ajax({
+		url: "https://api.trello.com/1/boards/59b957fde1709e3aae62b5c8/actions?limit=100&filter=all&before=5aaff0aa4177f0ce4fd081f5" + key,
+		method: 'GET',
+	}).done(function(result) {
+		console.log(result);
+	}).fail(function(err) {
+		throw err;
+	});
+}
+
 
 // create an onlick function to get the call the getList function
 $('#get-list').on('click', function() { 
@@ -328,14 +359,18 @@ function organizeBatches() {
 }
 
 function getActions(apiCalls) {
-	$.ajax({
-		url: "https://api.trello.com/1/batch?urls=" + apiCalls + key,
-		method: 'GET',
-	}).done(function(result) {
-		actionResults(result);
-	}).fail(function(err) {
-		throw err;
-	});
+	$.when(
+		$.ajax({
+			url: "https://api.trello.com/1/batch?urls=" + apiCalls + key,
+			method: 'GET',
+		}).done(function(result) {
+			//actionResults(result);
+		}).fail(function(err) {
+			throw err;
+		})
+	).then(function(data, textStatus, jqXHR) { 
+		actionResults(data);
+		});
 }
 
 function actionResults(actionResults) {
@@ -347,9 +382,11 @@ function actionResults(actionResults) {
 	for(i = 0; i < actionResults.length; i++) {	// iterate through the actions per card to relevent data
 		if(actionResults[i][200].length === 50) {
 			console.log("Big mama: " + actionResults[i][200][0].data.card.id);
+			metrics.actionNumber = metrics.actionNumber + 50;
 		}
 		else {
 			for(j = 0; j < actionResults[i][200].length; j++) { //interate through the number of actions for that card for relevent data
+				metrics.actionNumber = metrics.actionNumber + 1;
 				if(actionResults[i][200][j].type === "createCard" || actionResults[i][200][j].type === "copyCard") {
 					console.log("id:" + id + " & i/j " + i + "/" + j);
 					//console.log("i: " + i + " & j: " + j + " | create or copy");
