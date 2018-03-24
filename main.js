@@ -1,3 +1,5 @@
+var thign = "add a thing";
+
 // To do "big mama" are cards with more than 50 actions, need to figure out how to handle them
 
 
