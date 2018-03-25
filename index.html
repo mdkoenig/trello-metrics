@@ -10,50 +10,24 @@
 <body>
 	<h1>Trello Metrics</h1>
 		
-	<!-- <p>Selct Trello File</p>
+	<button id="not-get">Not Get</button>
+	<br>
+	<br><button id="get-cards">Get Cards</button>
 
-	<div id="drop">
-		<button onclick="document.querySelector('input').click()">Select</button>
-		<input style="visibility: collapse; width: 0px;" type="file" onchange="upload(this.files[0])">
-	</div>	-->
-	<table width="50%">
-		<tr>
-			<td><button id="get-cards">Get Cards</button></td>
-			<td><button id="not-get">Not Get</button></td>
-
-		</tr>
-		<tr>
-			<td></td>
-			<td><button id="calculate-cycle">Calculate Cycle</button></td>
-			<!--<td><button id="get-actions">Get Actions</button></td>-->
-			
-		</tr>
-		<tr>
-			<td></td>
-			<!-- <td><button id="full-cards">Full Cards</button></td> -->
-			<td><button id="date-range">Date Range</button></td>
-		</tr>
-		<tr><td>&nbsp;</td></tr>
-		<tr>
-			<!-- <td><button id="specific-batch">Specific Batch</button> <input id="batch-get" size="30"></input></td> -->
-			<td><button id="display-cards">Display Cards</button></td>
-			<td><button id="json-cards">JSON Cards</button></td>
-			<!--<td><button id="get-lists">Get Lists</button></td> -->
-			
-		</tr>
-	</table>
-
-	<br><button id="board-actions">Board Actions</button> <input id="last-id"></input>
+	<hr>
+	<button id="board-actions">Board Actions</button> <input id="last-id"></input>
 	<br>
 	<br><button id="specific-batch">Get Batch</button> <input id="batch-val"></input>
 	<br>
 	<br><button id="specific-card">Specific Card</button> <input id="card-num"></input>
 	<br>
 	<br><button id="specific-action">Specific Action</button> <input id="action-num"></input>
+	<hr>
+	<button id="show-output">Show Output</button></input>
 	<br>
-	<br><button id="show-output">Show Output</button></input>
+	<br><button id="json-cards">JSON Cards</button>
 	<br>
-	<br>
+	<hr>
 	<button id="fill-date">Fill Date</button>
 	<br>
 	<br >Start Date: <input id="start-date" size="10"></input> <button id="submit">Submit</button>

@@ -84,6 +84,7 @@ function dateRange() {
 	var sprintLength = parseInt($("#sprint-length").val());
 
 	sprints(startDate,finalDate,sprintLength);
+	console.log("done");
 }
 
 // find the start and end of all the sprints and put them into the metrics.sprints array
@@ -124,14 +125,14 @@ function addCycle() {
 
 // go through all the cards
 		for(j = 0; j < cards.index.length; j++) {
-			var id = cards.index[j][0][0]; // get the card id
+			var id = cards.index[j][0]; // get the card id
 			if(cards[id].endDate > metrics.sprints[i].sprintStart && cards[id].endDate < metrics.sprints[i].sprintEnd) { // if the end date of the card fit into the sprint start and end dates
 				metrics.sprints[i].total = metrics.sprints[i].total + cards[id].cycleMS; // then add the card's cycle time to the sprint's cycle time
 				metrics.sprints[i].cards.push(cards[id]); // and add the card's id to the array of cards in the sprint
 			}
 		}
 
-		console.log("Sprint: " + i + " & total MS: ")
+		// console.log("Sprint: " + i + " & total MS: ")
 		if(metrics.sprints[i].total === 0) {
 			metrics.sprints[i].cycleAvg = convertMS(0);
 		}
@@ -143,26 +144,23 @@ function addCycle() {
 	var total = 0;
 	for(i = 0; i < cards.index.length; i++) {
 		var MS = 0;
-		//console.log(typeof cards[cards.index[i][0][0]].cycleMS)
-		if(cards[cards.index[i][0][0]].cycleMS == NaN) {
+		//console.log(typeof cards[cards.index[i][0]].cycleMS)
+		if(cards[cards.index[i][0]].cycleMS == NaN) {
 			console.log("NaN & i: " + i);
 		}
 		else {
-			MS = cards[cards.index[i][0][0]].cycleMS;
+			MS = cards[cards.index[i][0]].cycleMS;
 		}
 		//console.log(MS);
 		total = total + MS;
 	}
 	total = convertMS(total);
-	console.log(total);
+	// console.log(total);
 
 
 
 	for(i = 0; i < metrics.sprints.length; i++) {
-		// console.log(metrics.sprints[i].cycle);
-		// console.log(metrics.sprints[i]);
 		metrics.sprints[i].cycleInt = (metrics.sprints[i].cycleAvg.d + (metrics.sprints[i].cycleAvg.h/24))/(metrics.sprints[i].cards.length);
-		// console.log(metrics.sprints[i].cycleInt);
 	}
 
 
@@ -177,12 +175,9 @@ function specificCard() {
     console.log("specificCard");
     var cardNum = $('#card-num').val();
     console.log(cardNum);
-    // var suffix = "https://api.trello.com/1/cards/" + cardNum + "/actions?filter=all&limit=100&key...";
-    // console.log(suffix);
-
+    
     $.ajax({
-		// url: "https://api.trello.com/1/cards/" + cardNum + "/actions?key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
-		url: "https://api.trello.com/1/cards/" + cardNum + "/actions?filter=all&limit=100&key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
+		url: "https://api.trello.com/1/cards/" + cardNum + "/actions?filter=all&limit=100" + key,
 		method: 'GET',
 	}).done(function(result) {
 		console.log(result);
@@ -204,11 +199,8 @@ function specificBatch() {
     console.log("specificBatch");
     var batchVal = $('#batch-val').val();
     console.log(batchVal);
-    // var suffix = "https://api.trello.com/1/cards/" + cardNum + "/actions?filter=all&limit=100&key...";
-    // console.log(suffix);
 
     $.ajax({
-		// url: "https://api.trello.com/1/cards/" + cardNum + "/actions?key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
 		url: "https://api.trello.com/1/batch?urls=" + batchVal + key,
 		method: 'GET',
 	}).done(function(result) {
@@ -228,7 +220,7 @@ function specificAction() {
     var actionNum = $('#action-num').val();
     
     $.ajax({
-		url: "https://api.trello.com/1/actions/" + actionNum + "?key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
+		url: "https://api.trello.com/1/actions/" + actionNum + key,
 		method: 'GET',
 	}).done(function(result) {
 		console.log(result);
@@ -242,19 +234,6 @@ $('#display-cards').on('click', function() {
 })
 
 function displayCards() {
-	// var displayCards = ["5a3ad4b3f8e064912cdc06f2","5a021f661b540c72eff74020","59ef488f1da86489e5a918c4","5a2ab288e7c2bb0ec311340a","5a85b95606e27bc3b3e9462e","5a158a939cd58fa0fb84d8ff","5a8303a729da9f70c9e69884","5a65f5f3ab6dedd5f4cb84f5","5a2ea39ddc66bcdab31fa951","5a7c6afda3efbefe4708acf5","5a81db47cbfad3742300565c","5a54dcbf1519e9bcf78e2dbd","5a4e98f9acaba2d0cf46894b","5a4d518b117092791e4013b5","5a7c6a95605f9828e3ae5265","5a29741b07341db216a4a681","5a942714e054dced401cf629","5a4d51a0a2952de5e9bad92c","5a5fa21d90ddeddcbc085f90","5a33da7e30b778663391b071"]
-	// var sampleCards = {};
-	// for(i = 0; i < 20; i++) {
-	// 	var id = displayCards[i];
-	// 	sampleCards[id] = cards[id];
-	// }
-	
-	// console.log("sampleCards");
-	// console.log(sampleCards);
-	
-	// var json = JSON.stringify(sampleCards);
-	// console.log("JSON");
-	// console.log(json);
 	console.log(cards);
 	console.log(metrics);
 }
@@ -293,7 +272,7 @@ function getCards() {	// ajax call to the Trello api to get all the cards for th
 
 function createCards(trello) { // function to go through the results and pull out the relevent information
 
-	console.log(trello);
+	// console.log(trello);
 
 	for(i = 0; i < trello.cards.length; i++) { // go through each card int he array
 		var id = trello.cards[i].id; // define the card's id
@@ -306,34 +285,42 @@ function createCards(trello) { // function to go through the results and pull ou
 		var actions = [] // make a blank array for actions to be populate later
 		var shortId = "short" + trello.cards[i].idShort; // define the shortId
 		cards[id] = {"id":id,"shortId":shortId,"labels":labels,"name":name,"endDate":endDate,"startDate":"","actions":actions,"cycleMS":0}; // add all the stuff to the card object
-		var index = [[id],[shortId]]; // create an index associating the id and short id
+		var index = [id,shortId];//[[id],[shortId]]; // create an index associating the id and short id
 		cards.index.push(index); // add to the index
 	}
 
-	console.log("Cards created");
-	console.log(cards);
+	// console.log("Cards created");
+	// console.log(cards);
 
 	organizeBatches();
 }
 
 // find some way to put arrays of 10 cards into an array of arrays so that you can iterate through the batch API call to do 25 calls, each of which has 10 GET calls for cards
 function organizeBatches() {
-	console.log("Organizing");
+	//console.log("Organizing");
 
 	var batchCount = 0;
 	var apiCalls = "";
 	var cardsCalled = [];
+	// var totalCalls = Math.floor(cards.index.length/10,1)+1;
+	// console.log(totalCalls);
+	// var currentCall = 0;
+	// var status = 0;
 
 	for(i = 0; i < cards.index.length; i++) { //cards.index.length
 		if(batchCount+1 === 10 || i === cards.index.length-1) {
 			apiCalls = apiCalls + "%2C%2Fcards%2F" + cards.index[i][0] + "%2Factions%3Ffilter%3Dall%26limit%3D100"; // add the next api call to the batch
 			cardsCalled.push(cards.index[i][0]);
-			//apiCalls = apiCalls.slice(0,-1); // slice off the trailing comma before sending it
 
-			console.log("apiCalls: " + apiCalls);
-			console.log(i);
+			// currentCall++;
+			
+			// if(currentCall === totalCalls) {
+			// 	status = 1;
+			// }
+			// console.log("apiCalls: " + apiCalls);
+			// console.log(i);
 
-			getActions(apiCalls);
+			getActions(apiCalls, status);
 
 			batchCount = 0; // reset batchCount for next batch of apis
 			apiCalls = ""; // reset api list for next batch of apis
@@ -350,49 +337,40 @@ function organizeBatches() {
 		}
 	}
 
-	console.log("cardsCalled");
-	console.log(cardsCalled);
+	// console.log("cardsCalled");
+	// console.log(cardsCalled);
 }
+
+var total = 27;
+var current = 0;
 
 function getActions(apiCalls) {
-	$.ajax({
-		//url: "https://api.trello.com/1/batch?urls=" + apiCalls + "&key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
-		url: "https://api.trello.com/1/batch?urls=" + apiCalls + key,
-		method: 'GET',
-	}).done(function(result) {
-		logActions(result);
-	}).fail(function(err) {
-		throw err;
+	$.when(
+		$.ajax({
+			url: "https://api.trello.com/1/batch?urls=" + apiCalls + key,
+			method: 'GET',
+		}).done(function(result) {
+		}).fail(function(err) {
+			throw err;
+		})
+	).then(function(data, textStatus, jqXHR) {
+		logActions(data);
+		current++;
+		if(current === total) {
+			calculateCycle();
+		}
 	});
-}
-
-function parseActions(actionResults) {
-	for(i = 0; i < actionResults.length; i++) {
-		if(actionResults[i][200].length === 50) {
-			var id = actionResults[i][200][0].data.card.id;
-			console.log(id)
-			getLongActions(id);
-		}
-		else {
-			var result = actionResults[i][200];
-			logActions(result)
-		}
-	}
-}
-
-function getLongActions(id) {
-	console.log("getLongActions: " + id);
 }
 
 function logActions(actionResults) { 
 
-	console.log("actionResults");
-	console.log(actionResults);
+// 	console.log("actionResults");
+// 	console.log(actionResults);
 
 
-//this only gets updateCards:idList and commentCard by default -- I can find a way to querry all, but not to do multiple types of filters on the batch api call
-	console.log("actionResults: " + actionResults.length);
-	console.log(actionResults);
+// //this only gets updateCards:idList and commentCard by default -- I can find a way to querry all, but not to do multiple types of filters on the batch api call
+// 	console.log("actionResults: " + actionResults.length);
+// 	console.log(actionResults);
 
 
 	for(i = 0; i < actionResults.length; i++) {	// iterate through the actions per card to relevent data
@@ -402,10 +380,7 @@ function logActions(actionResults) {
 		else {
 			for(j = 0; j < actionResults[i][200].length; j++) { //interate through the number of actions for that card for relevent data
 				if(actionResults[i][200][j].type === "createCard" || actionResults[i][200][j].type === "copyCard") {
-					console.log("id:" + id + " & i/j " + i + "/" + j);
-					//console.log("i: " + i + " & j: " + j + " | create or copy");
-					//console.log(actionResults[i][200][j].type);
-					//console.log("I: " + i + "& J: " + j);
+					// console.log("id:" + id + " & i/j " + i + "/" + j);
 					var id = actionResults[i][200][j].data.card.id;
 					var type = actionResults[i][200][j].type;
 					var date = new Date(actionResults[i][200][j].date);
@@ -423,17 +398,12 @@ function logActions(actionResults) {
 					}
 				
 					var actionObject = {"date":date,"cardId":id,"type":type,"actionId":actionId,"listBefore":listBefore,"listAfter":listAfter,"old":old}; // consoldate data into an object
-					//console.log("cardId: " + id);
 					cards[id].actions.push(actionObject); // push action object to the appropriate card
 				}
-				// else if(actionResults[i][200][j].type === "updateCard" && actionResults[i][200][j].data.old.hasOwnProperty("pos")) {
-				// console.log("position change");
-				// }
 				else if(
 					(actionResults[i][200][j].type === "updateCard" && actionResults[i][200][j].data.old.hasOwnProperty("closed")) ||
 					(actionResults[i][200][j].type === "updateCard" && actionResults[i][200][j].data.old.hasOwnProperty("idList")) 
 					) {
-					//console.log("I: " + i + "& J: " + j + " | updateCard");
 					var id = actionResults[i][200][j].data.card.id;
 					var type = actionResults[i][200][j].type;
 					var date = new Date(actionResults[i][200][j].date);
@@ -450,15 +420,12 @@ function logActions(actionResults) {
 				}
 			
 				var actionObject = {"date":date,"cardId":id,"type":type,"actionId":actionId,"listBefore":listBefore,"listAfter":listAfter,"old":old}; // consoldate data into an object
-				//console.log("cardId: " + id);
 				cards[id].actions.push(actionObject); // push action object to the appropriate card
 				}
 				else {
 				}
 			}
 		}
-	// console.log("got here");
-	// console.log(cards);
 	}
 }
 
@@ -468,10 +435,8 @@ $('#calculate-cycle').on('click', function() {
 
 function calculateCycle()
 {
-	// console.log("Start cycling");
-	// console.log(cards.index);
 	for(i = 0; i < cards.index.length; i++) {
-		var id = cards.index[i][0][0];
+		var id = cards.index[i][0];
 		var cycle = cards[id].endDate-cards[id].startDate;
 		if(cycle >= 0) {
 			cards[id].cycleMS = cycle;//convertMS(cycle);
@@ -481,7 +446,7 @@ function calculateCycle()
 		}
 	}
 
-	console.log(cards);
+	dateRange();
 }
 
 // create an onlick function to show the results on the UI
@@ -491,7 +456,7 @@ $('#show-output').on('click', function() {
 
 // once clicked, show some info from the Sprints
 function showOutput() {
-	console.log(metrics.sprints.length);
+	// console.log(metrics.sprints.length);
 	for(i = 0; i < metrics.sprints.length; i++) {
 		var days = metrics.sprints[i].cycleAvg.d;
 		days = days + Math.round(metrics.sprints[i].cycleAvg.h/24*100,4)/100;
@@ -528,7 +493,6 @@ $('#not-get').on('click', function() {
 function notGet() {
     fullCards();
 	calculateCycle();
-	dateRange();
 }
 
 
