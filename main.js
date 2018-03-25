@@ -1,3 +1,6 @@
+// To do "big mama" are cards with more than 50 actions, need to figure out how to handle them
+
+
 // esbalish an object for the cards that exist on trello
 var cards = {"index":[]};
 
@@ -34,47 +37,22 @@ $('#sprints').on('click', function() {
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-$('#get-cards').on('click', function() { // on click to get call the getCards function
-	getCards();
+// create an onlick function to get the call the getList function
+$('#get-list').on('click', function() { 
+	getList();
 })
 
-function getCards() {	// ajax call to the Trello api to get all the cards for the board with all fields
-	$.ajax({
-		url: "https://api.trello.com/1/search?query=59b957fde1709e3aae62b5c8&idBoards=mine&modelTypes=cards&board_fields=name%2CidOrganization&boards_limit=10&card_fields=all&cards_limit=1000&cards_page=0&card_list=true&card_attachments=false&organization_fields=name%2CdisplayName&organizations_limit=10&member_fields=avatarHash%2CfullName%2Cinitials%2Cusername%2Cconfirmed&members_limit=10" + key,
+// use an ajax call to get the lists of the team board from Trello
+function getList() {
+	 $.ajax({
+		url: "https://api.trello.com/1/boards/59b957fde1709e3aae62b5c8/lists?key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
 		method: 'GET',
 	}).done(function(result) {
-		createCards(result);	// send results to the createCards function to populate the cards object with certain information from the results
+		var json = JSON.stringify(result);
 	}).fail(function(err) {
 		throw err;
 	});
 }
-
-function createCards(trello) { // function to go through the results and pull out the relevent information
-
-	console.log(trello);
-
-	for(i = 0; i < trello.cards.length; i++) { // go through each card int he array
-		var id = trello.cards[i].id; // define the card's id
-		var labels = []; // establish a variable for labels
-		for (j = 0; j < trello.cards[i].labels.length; j++) { // go through the array of potential labels and add them to the labels variable
-			labels.push(trello.cards[i].labels[j].name);
-		}
-		var name = trello.cards[i].name; // define the card's name
-		var endDate = new Date(trello.cards[i].dateLastActivity); // define the card/s last date
-		var actions = [] // make a blank array for actions to be populate later
-		var shortId = "short" + trello.cards[i].idShort; // define the shortId
-		cards[id] = {"id":id,"shortId":shortId,"labels":labels,"name":name,"endDate":endDate,"startDate":"","actions":actions,"cycleMS":0}; // add all the stuff to the card object
-		var index = [[id],[shortId]]; // create an index associating the id and short id
-		cards.index.push(index); // add to the index
-	}
-
-	console.log("Cards created");
-	console.log(cards);
-
-	organizeBatches();
-}
-
-
 
 // on click to call the dateRange function
 $('#date-range').on('click', function() { 
@@ -190,48 +168,6 @@ function addCycle() {
 
 }
 
-$('#specific-batch').on('click', function() { 
-	specificBatch();
-})
-
-//gets a batch from Trello
-function specificBatch() {
-    console.log("specificCard");
-    var batchUrl = $('#batch-val').val();
-    console.log(batchUrl);
-
-    $.ajax({
-		url: "https://api.trello.com/1/batch?urls=" + batchUrl + "/actions?filter=all&limit=100" + key,
-		method: 'GET',
-	}).done(function(result) {
-		console.log(result);
-		}).fail(function(err) {
-		throw err;
-	});
-}
-
-$('#board-actions').on('click', function() { 
-	boardActions();
-})
-
-//gets a list of actions from the board by the id of the action before the one we're starting with
-function boardActions() {
-    console.log("last-id");
-    var lastId = $('#last-id').val();
-    console.log(lastId);
-
-    $.ajax({
-		//url: "https://api.trello.com/1/boards/59b957fde1709e3aae62b5c8/actions?filter=all&limit=100&before=" + lastId + key,
-		// url: "https://api.trello.com/1/batch?urls=%2Fboards%2F59b957fde1709e3aae62b5c8%2Factions%3Ffilter%3Dall%26limit%3D100%26before%3D5a0478562be04640b5aa5d12%2C%2Fboards%2F59b957fde1709e3aae62b5c8%2Factions%3Ffilter%3Dall%26limit%3D100%26before%3D59f9ed72c804b459a1e0cb5f" + key,
-		url: "https://api.trello.com/1/batch?urls=%2Fcards%2F5a1ecaf11221968e51b5c0c3%2Factions%3Ffilter%3Dall%26limit%3D100%2C%2Fcards%2F5a2ab288e7c2bb0ec311340a%2Factions%3Ffilter%3Dall%26limit%3D100%2C%2Fcards%2F5a4d32bec56fe35de216216f%2Factions%3Ffilter%3Dall%26limit%3D100" + key,
-		method: 'GET',
-	}).done(function(result) {
-		console.log(result);
-		}).fail(function(err) {
-		throw err;
-	});
-}
-
 $('#specific-card').on('click', function() { 
 	specificCard();
 })
@@ -245,7 +181,8 @@ function specificCard() {
     // console.log(suffix);
 
     $.ajax({
-		url: "https://api.trello.com/1/cards/" + cardNum + "/actions?filter=all&limit=100" + key,
+		// url: "https://api.trello.com/1/cards/" + cardNum + "/actions?key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
+		url: "https://api.trello.com/1/cards/" + cardNum + "/actions?filter=all&limit=100&key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
 		method: 'GET',
 	}).done(function(result) {
 		console.log(result);
@@ -253,6 +190,29 @@ function specificCard() {
 		var json = JSON.stringify(result);
 		console.log("json");
 		console.log(json);
+	}).fail(function(err) {
+		throw err;
+	});
+}
+
+$('#specific-batch').on('click', function() { 
+	specificBatch();
+})
+
+//look up a batch of api calls
+function specificBatch() {
+    console.log("specificBatch");
+    var batchVal = $('#batch-val').val();
+    console.log(batchVal);
+    // var suffix = "https://api.trello.com/1/cards/" + cardNum + "/actions?filter=all&limit=100&key...";
+    // console.log(suffix);
+
+    $.ajax({
+		// url: "https://api.trello.com/1/cards/" + cardNum + "/actions?key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
+		url: "https://api.trello.com/1/batch?urls=" + batchVal + key,
+		method: 'GET',
+	}).done(function(result) {
+		console.log(result);
 	}).fail(function(err) {
 		throw err;
 	});
@@ -268,7 +228,7 @@ function specificAction() {
     var actionNum = $('#action-num').val();
     
     $.ajax({
-		url: "https://api.trello.com/1/actions/" + actionNum + key,
+		url: "https://api.trello.com/1/actions/" + actionNum + "?key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
 		method: 'GET',
 	}).done(function(result) {
 		console.log(result);
@@ -316,6 +276,191 @@ $('#full-cards').on('click', function() { // on click to get call the getCards f
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+$('#get-cards').on('click', function() { // on click to get call the getCards function
+	getCards();
+})
+
+function getCards() {	// ajax call to the Trello api to get all the cards for the board with all fields
+	$.ajax({
+		url: "https://api.trello.com/1/search?query=59b957fde1709e3aae62b5c8&idBoards=mine&modelTypes=cards&board_fields=name%2CidOrganization&boards_limit=10&card_fields=all&cards_limit=1000&cards_page=0&card_list=true&card_attachments=false&organization_fields=name%2CdisplayName&organizations_limit=10&member_fields=avatarHash%2CfullName%2Cinitials%2Cusername%2Cconfirmed&members_limit=10&key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
+		method: 'GET',
+	}).done(function(result) {
+		createCards(result);	// send results to the createCards function to populate the cards object with certain information from the results
+	}).fail(function(err) {
+		throw err;
+	});
+}
+
+function createCards(trello) { // function to go through the results and pull out the relevent information
+
+	console.log(trello);
+
+	for(i = 0; i < trello.cards.length; i++) { // go through each card int he array
+		var id = trello.cards[i].id; // define the card's id
+		var labels = []; // establish a variable for labels
+		for (j = 0; j < trello.cards[i].labels.length; j++) { // go through the array of potential labels and add them to the labels variable
+			labels.push(trello.cards[i].labels[j].name);
+		}
+		var name = trello.cards[i].name; // define the card's name
+		var endDate = new Date(trello.cards[i].dateLastActivity); // define the card/s last date
+		var actions = [] // make a blank array for actions to be populate later
+		var shortId = "short" + trello.cards[i].idShort; // define the shortId
+		cards[id] = {"id":id,"shortId":shortId,"labels":labels,"name":name,"endDate":endDate,"startDate":"","actions":actions,"cycleMS":0}; // add all the stuff to the card object
+		var index = [[id],[shortId]]; // create an index associating the id and short id
+		cards.index.push(index); // add to the index
+	}
+
+	console.log("Cards created");
+	console.log(cards);
+
+	organizeBatches();
+}
+
+// find some way to put arrays of 10 cards into an array of arrays so that you can iterate through the batch API call to do 25 calls, each of which has 10 GET calls for cards
+function organizeBatches() {
+	console.log("Organizing");
+
+	var batchCount = 0;
+	var apiCalls = "";
+	var cardsCalled = [];
+
+	for(i = 0; i < cards.index.length; i++) { //cards.index.length
+		if(batchCount+1 === 10 || i === cards.index.length-1) {
+			apiCalls = apiCalls + "%2C%2Fcards%2F" + cards.index[i][0] + "%2Factions%3Ffilter%3Dall%26limit%3D100"; // add the next api call to the batch
+			cardsCalled.push(cards.index[i][0]);
+			//apiCalls = apiCalls.slice(0,-1); // slice off the trailing comma before sending it
+
+			console.log("apiCalls: " + apiCalls);
+			console.log(i);
+
+			getActions(apiCalls);
+
+			batchCount = 0; // reset batchCount for next batch of apis
+			apiCalls = ""; // reset api list for next batch of apis
+		}
+		else if(batchCount > 0) {
+			batchCount +=1; // count number of apis up to get to ten for a batch
+			apiCalls = apiCalls + "%2C%2Fcards%2F" + cards.index[i][0] + "%2Factions%3Ffilter%3Dall%26limit%3D100"; // trello format for api calls in batch
+			cardsCalled.push(cards.index[i][0]);
+		}
+		else if(batchCount === 0) {
+			batchCount +=1; // count number of apis up to get to ten for a batch
+			apiCalls = apiCalls + "%2Fcards%2F" + cards.index[i][0] + "%2Factions%3Ffilter%3Dall%26limit%3D100"; // trello format for api calls in batch
+			cardsCalled.push(cards.index[i][0]);
+		}
+	}
+
+	console.log("cardsCalled");
+	console.log(cardsCalled);
+}
+
+function getActions(apiCalls) {
+	$.ajax({
+		//url: "https://api.trello.com/1/batch?urls=" + apiCalls + "&key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
+		url: "https://api.trello.com/1/batch?urls=" + apiCalls + key,
+		method: 'GET',
+	}).done(function(result) {
+		logActions(result);
+	}).fail(function(err) {
+		throw err;
+	});
+}
+
+function parseActions(actionResults) {
+	for(i = 0; i < actionResults.length; i++) {
+		if(actionResults[i][200].length === 50) {
+			var id = actionResults[i][200][0].data.card.id;
+			console.log(id)
+			getLongActions(id);
+		}
+		else {
+			var result = actionResults[i][200];
+			logActions(result)
+		}
+	}
+}
+
+function getLongActions(id) {
+	console.log("getLongActions: " + id);
+}
+
+function logActions(actionResults) { 
+
+	console.log("actionResults");
+	console.log(actionResults);
+
+
+//this only gets updateCards:idList and commentCard by default -- I can find a way to querry all, but not to do multiple types of filters on the batch api call
+	console.log("actionResults: " + actionResults.length);
+	console.log(actionResults);
+
+
+	for(i = 0; i < actionResults.length; i++) {	// iterate through the actions per card to relevent data
+		if(actionResults[i][200].length === 50) {
+			console.log("Big mama: " + actionResults[i][200][0].data.card.id);
+		}
+		else {
+			for(j = 0; j < actionResults[i][200].length; j++) { //interate through the number of actions for that card for relevent data
+				if(actionResults[i][200][j].type === "createCard" || actionResults[i][200][j].type === "copyCard") {
+					console.log("id:" + id + " & i/j " + i + "/" + j);
+					//console.log("i: " + i + " & j: " + j + " | create or copy");
+					//console.log(actionResults[i][200][j].type);
+					//console.log("I: " + i + "& J: " + j);
+					var id = actionResults[i][200][j].data.card.id;
+					var type = actionResults[i][200][j].type;
+					var date = new Date(actionResults[i][200][j].date);
+					cards[id].startDate = date;
+					var actionId = actionResults[i][200][j].id;
+					var old = actionResults[i][200][j].data.old;
+
+					if(actionResults[i][200][j].data.listBefore !== undefined) {
+						var listBefore = actionResults[i][200][j].data.listBefore.id;
+						var listAfter = actionResults[i][200][j].data.listAfter.id;
+					}
+					else {
+						var listBefore = "";
+						var listAfter = "";
+					}
+				
+					var actionObject = {"date":date,"cardId":id,"type":type,"actionId":actionId,"listBefore":listBefore,"listAfter":listAfter,"old":old}; // consoldate data into an object
+					//console.log("cardId: " + id);
+					cards[id].actions.push(actionObject); // push action object to the appropriate card
+				}
+				// else if(actionResults[i][200][j].type === "updateCard" && actionResults[i][200][j].data.old.hasOwnProperty("pos")) {
+				// console.log("position change");
+				// }
+				else if(
+					(actionResults[i][200][j].type === "updateCard" && actionResults[i][200][j].data.old.hasOwnProperty("closed")) ||
+					(actionResults[i][200][j].type === "updateCard" && actionResults[i][200][j].data.old.hasOwnProperty("idList")) 
+					) {
+					//console.log("I: " + i + "& J: " + j + " | updateCard");
+					var id = actionResults[i][200][j].data.card.id;
+					var type = actionResults[i][200][j].type;
+					var date = new Date(actionResults[i][200][j].date);
+					var actionId = actionResults[i][200][j].id;
+					var old = actionResults[i][200][j].data.old;
+
+					if(actionResults[i][200][j].data.listBefore !== undefined) {
+						var listBefore = actionResults[i][200][j].data.listBefore.id;
+						var listAfter = actionResults[i][200][j].data.listAfter.id;
+					}
+					else {
+						var listBefore = "";
+						var listAfter = "";
+				}
+			
+				var actionObject = {"date":date,"cardId":id,"type":type,"actionId":actionId,"listBefore":listBefore,"listAfter":listAfter,"old":old}; // consoldate data into an object
+				//console.log("cardId: " + id);
+				cards[id].actions.push(actionObject); // push action object to the appropriate card
+				}
+				else {
+				}
+			}
+		}
+	// console.log("got here");
+	// console.log(cards);
+	}
+}
 
 $('#calculate-cycle').on('click', function() { 
 	calculateCycle();
