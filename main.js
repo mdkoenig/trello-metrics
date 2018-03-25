@@ -1,11 +1,8 @@
-// To do "big mama" are cards with more than 50 actions, need to figure out how to handle them
-
-
 // esbalish an object for the cards that exist on trello
 var cards = {"index":[]};
 
 // establish and object of the project-wide metrics
-var metrics = {};
+var metrics = {totalBatches: 0, currentBatch: 0};
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -120,7 +117,7 @@ function sprints(projectStart,projectEnd,length) {
 function addCycle() {
 // go through the spritns and establish the total time "used" in that sprint and a blank array for the cards in the sprint
 	for(i = 0; i < metrics.sprints.length; i++) {
-		metrics.sprints[i].total = 0;
+		metrics.sprints[i].total = 0; // establish baselines for sprint i
 		metrics.sprints[i].cards = [];
 
 // go through all the cards
@@ -132,38 +129,31 @@ function addCycle() {
 			}
 		}
 
-		// console.log("Sprint: " + i + " & total MS: ")
 		if(metrics.sprints[i].total === 0) {
-			metrics.sprints[i].cycleAvg = convertMS(0);
+			metrics.sprints[i].cycleAvg = convertMS(0); // for the case of a Sprint having no cards... annoying first Sprint
 		}
 		else {
 			metrics.sprints[i].cycleAvg = convertMS(metrics.sprints[i].total/metrics.sprints[i].cards.length); // when done going through all the cards, convert the time to a more human readable format
 		}
 	}
 
-	var total = 0;
-	for(i = 0; i < cards.index.length; i++) {
+	var sprintTotal = 0; // instantiate total time
+	for(i = 0; i < cards.index.length; i++) { // go through the cards and add up the time spent
 		var MS = 0;
-		//console.log(typeof cards[cards.index[i][0]].cycleMS)
-		if(cards[cards.index[i][0]].cycleMS == NaN) {
-			console.log("NaN & i: " + i);
+		var id = cards.index[i][0];
+		if(cards[id].cycleMS == NaN) {
+			console.log("NaN & i: " + i); // I guess this was for when things were blank?
 		}
 		else {
-			MS = cards[cards.index[i][0]].cycleMS;
+			MS = cards[id].cycleMS; // grab the MS from the card
 		}
-		//console.log(MS);
-		total = total + MS;
+		sprintTotal = sprintTotal + MS; // add the MS from the card to the Sprint total
 	}
-	total = convertMS(total);
-	// console.log(total);
-
-
+	sprintTotal = convertMS(sprintTotal);
 
 	for(i = 0; i < metrics.sprints.length; i++) {
-		metrics.sprints[i].cycleInt = (metrics.sprints[i].cycleAvg.d + (metrics.sprints[i].cycleAvg.h/24))/(metrics.sprints[i].cards.length);
+		metrics.sprints[i].cycleInt = (metrics.sprints[i].cycleAvg.d + (metrics.sprints[i].cycleAvg.h/24)) // once done with all the sprints, go through them and get an interger (okay, it's not a real integer) for the average cycle time
 	}
-
-
 }
 
 $('#specific-card').on('click', function() { 
@@ -238,7 +228,7 @@ function displayCards() {
 	console.log(metrics);
 }
 
-$('#json-cards').on('click', function() { // on click to get call the getCards function
+$('#json-cards').on('click', function() { // make the cards into a JSON
 	jsonCards();
 })
 
@@ -248,7 +238,7 @@ function jsonCards() {
 	console.log(json);
 }
 
-$('#full-cards').on('click', function() { // on click to get call the getCards function
+$('#full-cards').on('click', function() { // get the full cards stored within the js
 	fullCards();
 })
 
@@ -273,6 +263,8 @@ function getCards() {	// ajax call to the Trello api to get all the cards for th
 function createCards(trello) { // function to go through the results and pull out the relevent information
 
 	// console.log(trello);
+	metrics.totalBatches = Math.floor(trello.cards.length/10,1)+1;
+	console.log(metrics.totalBatches);
 
 	for(i = 0; i < trello.cards.length; i++) { // go through each card int he array
 		var id = trello.cards[i].id; // define the card's id
@@ -289,36 +281,19 @@ function createCards(trello) { // function to go through the results and pull ou
 		cards.index.push(index); // add to the index
 	}
 
-	// console.log("Cards created");
-	// console.log(cards);
-
 	organizeBatches();
 }
 
 // find some way to put arrays of 10 cards into an array of arrays so that you can iterate through the batch API call to do 25 calls, each of which has 10 GET calls for cards
 function organizeBatches() {
-	//console.log("Organizing");
-
 	var batchCount = 0;
 	var apiCalls = "";
 	var cardsCalled = [];
-	// var totalCalls = Math.floor(cards.index.length/10,1)+1;
-	// console.log(totalCalls);
-	// var currentCall = 0;
-	// var status = 0;
 
 	for(i = 0; i < cards.index.length; i++) { //cards.index.length
 		if(batchCount+1 === 10 || i === cards.index.length-1) {
 			apiCalls = apiCalls + "%2C%2Fcards%2F" + cards.index[i][0] + "%2Factions%3Ffilter%3Dall%26limit%3D100"; // add the next api call to the batch
 			cardsCalled.push(cards.index[i][0]);
-
-			// currentCall++;
-			
-			// if(currentCall === totalCalls) {
-			// 	status = 1;
-			// }
-			// console.log("apiCalls: " + apiCalls);
-			// console.log(i);
 
 			getActions(apiCalls, status);
 
@@ -336,13 +311,7 @@ function organizeBatches() {
 			cardsCalled.push(cards.index[i][0]);
 		}
 	}
-
-	// console.log("cardsCalled");
-	// console.log(cardsCalled);
 }
-
-var total = 27;
-var current = 0;
 
 function getActions(apiCalls) {
 	$.when(
@@ -355,24 +324,14 @@ function getActions(apiCalls) {
 		})
 	).then(function(data, textStatus, jqXHR) {
 		logActions(data);
-		current++;
-		if(current === total) {
+		metrics.currentBatch = metrics.currentBatch + 1;
+		if(metrics.currentBatch === metrics.totalBatches) {
 			calculateCycle();
 		}
 	});
 }
 
 function logActions(actionResults) { 
-
-// 	console.log("actionResults");
-// 	console.log(actionResults);
-
-
-// //this only gets updateCards:idList and commentCard by default -- I can find a way to querry all, but not to do multiple types of filters on the batch api call
-// 	console.log("actionResults: " + actionResults.length);
-// 	console.log(actionResults);
-
-
 	for(i = 0; i < actionResults.length; i++) {	// iterate through the actions per card to relevent data
 		if(actionResults[i][200].length === 50) {
 			console.log("Big mama: " + actionResults[i][200][0].data.card.id);
@@ -380,7 +339,6 @@ function logActions(actionResults) {
 		else {
 			for(j = 0; j < actionResults[i][200].length; j++) { //interate through the number of actions for that card for relevent data
 				if(actionResults[i][200][j].type === "createCard" || actionResults[i][200][j].type === "copyCard") {
-					// console.log("id:" + id + " & i/j " + i + "/" + j);
 					var id = actionResults[i][200][j].data.card.id;
 					var type = actionResults[i][200][j].type;
 					var date = new Date(actionResults[i][200][j].date);
@@ -456,7 +414,6 @@ $('#show-output').on('click', function() {
 
 // once clicked, show some info from the Sprints
 function showOutput() {
-	// console.log(metrics.sprints.length);
 	for(i = 0; i < metrics.sprints.length; i++) {
 		var days = metrics.sprints[i].cycleAvg.d;
 		days = days + Math.round(metrics.sprints[i].cycleAvg.h/24*100,4)/100;
