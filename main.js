@@ -1,3 +1,5 @@
+// GLOBAL VARIABLES
+
 // esbalish an object for the cards that exist on trello
 var cards = {"index":[]};
 
@@ -6,6 +8,8 @@ var metrics = {totalBatches: 0, currentBatch: 0};
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// USER INPUTED INFORMATION
 
 // use the date picker to select the start date that you'd like to look at your sprints from
 $("#submit").on('click', function() {
@@ -34,6 +38,8 @@ $('#sprints').on('click', function() {
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+// FUTURE FUNCTIONALITY
+
 // create an onlick function to get the call the getList function
 $('#get-list').on('click', function() { 
 	getList();
@@ -50,197 +56,6 @@ function getList() {
 		throw err;
 	});
 }
-
-// on click to call the dateRange function
-$('#date-range').on('click', function() { 
-	dateRange();
-})
-
-// find the start and final date of all the cards
-function dateRange() {
-	var finalDate = new Date(cards[cards.index[0][0]].endDate); // establish the end date as the first card's end date
-	for(i = 0; i < cards.index.length; i++) { // go through all the cards
-		if(cards[cards.index[i][0]].endDate > finalDate) { // if the card's end date is later than the curent final date, change the final end date to the card's end date
-			finalDate = new Date(cards[cards.index[i][0]].endDate);
-		}
-	}
-
-	var startDate = $('#start-date').val(); // get the starting date from the UI
-	if(startDate == 0) {
-		startDate = new Date("08/30/17"); // if there is none, assume 08-30-17
-	}
-	else {
-		startDate = new Date(start);
-	}
-
-	// put the starting and final dates into the metrics object
-	metrics.startDate = startDate;
-	metrics.finalDate = finalDate;
-
-	// get the sprint length from the UI
-	var sprintLength = parseInt($("#sprint-length").val());
-
-	sprints(startDate,finalDate,sprintLength);
-	console.log("done");
-}
-
-// find the start and end of all the sprints and put them into the metrics.sprints array
-function sprints(projectStart,projectEnd,length) {
-	var projectTime = convertMS(projectEnd-projectStart); // calculate the total time of the project
-	var days = projectTime.d; // find out the number of days for the project
-	var sprints = Math.floor(days/length); // find out the number of sprints within the project
-	
-	metrics.sprints = []; // create an array within the metrics object for the sprints
-	
-	for(let i = 0; i < sprints; i++) {
-		var name = "sprint" + i; // create the sprint name
-		metrics.sprints[i] = {}; // creat the sprint ojbect within teh sprints array
-		
-		var day = projectStart.getDate(); // getting the day the project starts
-		
-		var sprintStart = new Date(projectStart); // establish the start of the new sprint (to be changed later)
-		sprintStart.setDate(day + (length * i)); // set the start of the sprint as the start of the project plus the length of the sprint times the sprint number
-		
-		var sprintEnd = new Date(sprintStart); // create new date object for the sprint end equal to the start of the sprint
-		sprintEnd.setDate(sprintStart.getDate()+length); // set it as the start plus the length of the sprint
-		
-		metrics.sprints[i].sprintStart = sprintStart; // set the start of the sprint in the metrics object
-		metrics.sprints[i].sprintEnd = sprintEnd; // set the end of the sprint in the metrics object
-
-		metrics.sprints[i].name = "Sprint" + (i + 38);
-	}
-
-	addCycle();	
-}
-
-//
-function addCycle() {
-// go through the spritns and establish the total time "used" in that sprint and a blank array for the cards in the sprint
-	for(i = 0; i < metrics.sprints.length; i++) {
-		metrics.sprints[i].total = 0; // establish baselines for sprint i
-		metrics.sprints[i].cards = [];
-
-// go through all the cards
-		for(j = 0; j < cards.index.length; j++) {
-			var id = cards.index[j][0]; // get the card id
-			if(cards[id].endDate > metrics.sprints[i].sprintStart && cards[id].endDate < metrics.sprints[i].sprintEnd) { // if the end date of the card fit into the sprint start and end dates
-				metrics.sprints[i].total = metrics.sprints[i].total + cards[id].cycleMS; // then add the card's cycle time to the sprint's cycle time
-				metrics.sprints[i].cards.push(cards[id]); // and add the card's id to the array of cards in the sprint
-			}
-		}
-
-		if(metrics.sprints[i].total === 0) {
-			metrics.sprints[i].cycleAvg = convertMS(0); // for the case of a Sprint having no cards... annoying first Sprint
-		}
-		else {
-			metrics.sprints[i].cycleAvg = convertMS(metrics.sprints[i].total/metrics.sprints[i].cards.length); // when done going through all the cards, convert the time to a more human readable format
-		}
-	}
-
-	var sprintTotal = 0; // instantiate total time
-	for(i = 0; i < cards.index.length; i++) { // go through the cards and add up the time spent
-		var MS = 0;
-		var id = cards.index[i][0];
-		if(cards[id].cycleMS == NaN) {
-			console.log("NaN & i: " + i); // I guess this was for when things were blank?
-		}
-		else {
-			MS = cards[id].cycleMS; // grab the MS from the card
-		}
-		sprintTotal = sprintTotal + MS; // add the MS from the card to the Sprint total
-	}
-	sprintTotal = convertMS(sprintTotal);
-
-	for(i = 0; i < metrics.sprints.length; i++) {
-		metrics.sprints[i].cycleInt = (metrics.sprints[i].cycleAvg.d + (metrics.sprints[i].cycleAvg.h/24)) // once done with all the sprints, go through them and get an interger (okay, it's not a real integer) for the average cycle time
-	}
-}
-
-$('#specific-card').on('click', function() { 
-	specificCard();
-})
-
-//look up a specific card by providing a card number on the UI to faciliate testing
-function specificCard() {
-    console.log("specificCard");
-    var cardNum = $('#card-num').val();
-    console.log(cardNum);
-    
-    $.ajax({
-		url: "https://api.trello.com/1/cards/" + cardNum + "/actions?filter=all&limit=100" + key,
-		method: 'GET',
-	}).done(function(result) {
-		console.log(result);
-		console.log("here");
-		var json = JSON.stringify(result);
-		console.log("json");
-		console.log(json);
-	}).fail(function(err) {
-		throw err;
-	});
-}
-
-$('#specific-batch').on('click', function() { 
-	specificBatch();
-})
-
-//look up a batch of api calls
-function specificBatch() {
-    console.log("specificBatch");
-    var batchVal = $('#batch-val').val();
-    console.log(batchVal);
-
-    $.ajax({
-		url: "https://api.trello.com/1/batch?urls=" + batchVal + key,
-		method: 'GET',
-	}).done(function(result) {
-		console.log(result);
-	}).fail(function(err) {
-		throw err;
-	});
-}
-
-//look up a specific action by providing a action number on the UI to faciliate testing
-$('#specific-action').on('click', function() {
-	specificAction();
-})
-
-function specificAction() {
-    console.log("specificAction");
-    var actionNum = $('#action-num').val();
-    
-    $.ajax({
-		url: "https://api.trello.com/1/actions/" + actionNum + key,
-		method: 'GET',
-	}).done(function(result) {
-		console.log(result);
-	}).fail(function(err) {
-		throw err;
-	});
-}
-
-$('#display-cards').on('click', function() { 
-	displayCards();
-})
-
-function displayCards() {
-	console.log(cards);
-	console.log(metrics);
-}
-
-$('#json-cards').on('click', function() { // make the cards into a JSON
-	jsonCards();
-})
-
-function jsonCards() {
-	var json = JSON.stringify(cards);
-	console.log("JSON cards");
-	console.log(json);
-}
-
-$('#full-cards').on('click', function() { // get the full cards stored within the js
-	fullCards();
-})
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -387,10 +202,6 @@ function logActions(actionResults) {
 	}
 }
 
-$('#calculate-cycle').on('click', function() { 
-	calculateCycle();
-})
-
 function calculateCycle()
 {
 	for(i = 0; i < cards.index.length; i++) {
@@ -406,6 +217,212 @@ function calculateCycle()
 
 	dateRange();
 }
+
+// find the start and final date of all the cards
+function dateRange() {
+	var finalDate = new Date(cards[cards.index[0][0]].endDate); // establish the end date as the first card's end date
+	for(i = 0; i < cards.index.length; i++) { // go through all the cards
+		if(cards[cards.index[i][0]].endDate > finalDate) { // if the card's end date is later than the curent final date, change the final end date to the card's end date
+			finalDate = new Date(cards[cards.index[i][0]].endDate);
+		}
+	}
+
+	var startDate = $('#start-date').val(); // get the starting date from the UI
+	if(startDate == 0) {
+		startDate = new Date("08/30/17"); // if there is none, assume 08-30-17
+	}
+	else {
+		startDate = new Date(start);
+	}
+
+	// put the starting and final dates into the metrics object
+	metrics.startDate = startDate;
+	metrics.finalDate = finalDate;
+
+	// get the sprint length from the UI
+	var sprintLength = parseInt($("#sprint-length").val());
+
+	sprints(startDate,finalDate,sprintLength);
+	console.log("done");
+}
+
+// find the start and end of all the sprints and put them into the metrics.sprints array
+function sprints(projectStart,projectEnd,length) {
+	var projectTime = convertMS(projectEnd-projectStart); // calculate the total time of the project
+	var days = projectTime.d; // find out the number of days for the project
+	var sprints = Math.floor(days/length); // find out the number of sprints within the project
+	
+	metrics.sprints = []; // create an array within the metrics object for the sprints
+	
+	for(let i = 0; i < sprints; i++) {
+		var name = "sprint" + i; // create the sprint name
+		metrics.sprints[i] = {}; // creat the sprint ojbect within teh sprints array
+		
+		var day = projectStart.getDate(); // getting the day the project starts
+		
+		var sprintStart = new Date(projectStart); // establish the start of the new sprint (to be changed later)
+		sprintStart.setDate(day + (length * i)); // set the start of the sprint as the start of the project plus the length of the sprint times the sprint number
+		
+		var sprintEnd = new Date(sprintStart); // create new date object for the sprint end equal to the start of the sprint
+		sprintEnd.setDate(sprintStart.getDate()+length); // set it as the start plus the length of the sprint
+		
+		metrics.sprints[i].sprintStart = sprintStart; // set the start of the sprint in the metrics object
+		metrics.sprints[i].sprintEnd = sprintEnd; // set the end of the sprint in the metrics object
+
+		metrics.sprints[i].name = "Sprint" + (i + 38);
+	}
+
+	addCycle();	
+}
+
+// go through the spritns and establish the total time "used" in that sprint and a blank array for the cards in the sprint
+function addCycle() {
+// go through the spritns and establish the total time "used" in that sprint and a blank array for the cards in the sprint
+	for(i = 0; i < metrics.sprints.length; i++) {
+		metrics.sprints[i].total = 0; // establish baselines for sprint i
+		metrics.sprints[i].cards = [];
+
+// go through all the cards
+		for(j = 0; j < cards.index.length; j++) {
+			var id = cards.index[j][0]; // get the card id
+			if(cards[id].endDate > metrics.sprints[i].sprintStart && cards[id].endDate < metrics.sprints[i].sprintEnd) { // if the end date of the card fit into the sprint start and end dates
+				metrics.sprints[i].total = metrics.sprints[i].total + cards[id].cycleMS; // then add the card's cycle time to the sprint's cycle time
+				metrics.sprints[i].cards.push(cards[id]); // and add the card's id to the array of cards in the sprint
+			}
+		}
+
+		if(metrics.sprints[i].total === 0) {
+			metrics.sprints[i].cycleAvg = convertMS(0); // for the case of a Sprint having no cards... annoying first Sprint
+		}
+		else {
+			metrics.sprints[i].cycleAvg = convertMS(metrics.sprints[i].total/metrics.sprints[i].cards.length); // when done going through all the cards, convert the time to a more human readable format
+		}
+	}
+
+	var sprintTotal = 0; // instantiate total time
+	for(i = 0; i < cards.index.length; i++) { // go through the cards and add up the time spent
+		var MS = 0;
+		var id = cards.index[i][0];
+		if(cards[id].cycleMS == NaN) {
+			console.log("NaN & i: " + i); // I guess this was for when things were blank?
+		}
+		else {
+			MS = cards[id].cycleMS; // grab the MS from the card
+		}
+		sprintTotal = sprintTotal + MS; // add the MS from the card to the Sprint total
+	}
+	sprintTotal = convertMS(sprintTotal);
+
+	for(i = 0; i < metrics.sprints.length; i++) {
+		metrics.sprints[i].cycleInt = (metrics.sprints[i].cycleAvg.d + (metrics.sprints[i].cycleAvg.h/24)) // once done with all the sprints, go through them and get an interger (okay, it's not a real integer) for the average cycle time
+	}
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// TESTING FUNCTIONS
+
+$('#specific-batch').on('click', function() { 
+	specificBatch();
+})
+
+//look up a batch of api calls
+function specificBatch() {
+    console.log("specificBatch");
+    var batchVal = $('#batch-val').val();
+    console.log(batchVal);
+
+    $.ajax({
+		url: "https://api.trello.com/1/batch?urls=" + batchVal + key,
+		method: 'GET',
+	}).done(function(result) {
+		console.log(result);
+	}).fail(function(err) {
+		throw err;
+	});
+}
+
+$('#specific-card').on('click', function() { 
+	specificCard();
+})
+
+//look up a specific card by providing a card number on the UI to faciliate testing
+function specificCard() {
+    console.log("specificCard");
+    var cardNum = $('#card-num').val();
+    console.log(cardNum);
+    
+    $.ajax({
+		url: "https://api.trello.com/1/cards/" + cardNum + "/actions?filter=all&limit=100" + key,
+		method: 'GET',
+	}).done(function(result) {
+		console.log(result);
+		console.log("here");
+		var json = JSON.stringify(result);
+		console.log("json");
+		console.log(json);
+	}).fail(function(err) {
+		throw err;
+	});
+}
+
+//look up a specific action by providing a action number on the UI to faciliate testing
+$('#specific-action').on('click', function() {
+	specificAction();
+})
+
+function specificAction() {
+    console.log("specificAction");
+    var actionNum = $('#action-num').val();
+    
+    $.ajax({
+		url: "https://api.trello.com/1/actions/" + actionNum + key,
+		method: 'GET',
+	}).done(function(result) {
+		console.log(result);
+	}).fail(function(err) {
+		throw err;
+	});
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+$('#display-cards').on('click', function() { 
+	displayCards();
+})
+
+function displayCards() {
+	console.log(cards);
+	console.log(metrics);
+}
+
+$('#json-cards').on('click', function() { // make the cards into a JSON
+	jsonCards();
+})
+
+function jsonCards() {
+	var json = JSON.stringify(cards);
+	console.log("JSON cards");
+	console.log(json);
+}
+
+$('#not-get').on('click', function() { 
+	notGet();
+})
+
+function notGet() {
+    fullCards();
+	calculateCycle();
+}
+
+$('#full-cards').on('click', function() { // get the full cards stored within the js
+	fullCards();
+})
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // create an onlick function to show the results on the UI
 $('#show-output').on('click', function() { 
@@ -431,6 +448,7 @@ function showOutput() {
 	}
 }
 
+// concert MS to a day, hour, etc object
 function convertMS(ms) {
   var d, h, m, s;
   s = Math.floor(ms / 1000);
@@ -443,19 +461,10 @@ function convertMS(ms) {
   return { d: d, h: h, m: m, s: s };
 };
 
-$('#not-get').on('click', function() { 
-	notGet();
-})
-
-function notGet() {
-    fullCards();
-	calculateCycle();
-}
-
-
-
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// D3 IS SCARY AND EXCITING
 
 var n = 6; // number of layers
 var m = 12; // number of samples per layer
