@@ -1,3 +1,5 @@
+// TO DO - deal with cards that aren't done
+
 // GLOBAL VARIABLES
 
 // esbalish an object for the cards that exist on trello
@@ -184,7 +186,7 @@ function logActions(actionResults) {
 				var actionCard = new UpdateAction(results, j); // construct new Update action object
 				cards[actionCard.id].actions.push(actionCard); // push Update to the card
 
-				var lists = {"listBefore": actionCard.listBefore, "listAfter": actionCard.listAfter, "date": actionCard.date,"nameBefore": actionCard.nameBefore, "nameAfter":actionCard.nameAfter};
+				var lists = {"listId": actionCard.listBefore, "listAfter": actionCard.listAfter, "date": actionCard.date,"nameBefore": actionCard.nameBefore, "nameAfter":actionCard.nameAfter};
 				cards[actionCard.id].lists.push(lists);
 			}
 
@@ -341,6 +343,7 @@ function addCycle() {
 			if(cards[id].endDate > metrics.sprints[i].sprintStart && cards[id].endDate < metrics.sprints[i].sprintEnd) { // if the end date of the card fit into the sprint start and end dates
 				metrics.sprints[i].total = metrics.sprints[i].total + cards[id].cycleMS; // then add the card's cycle time to the sprint's cycle time
 				metrics.sprints[i].cards.push(cards[id]); // and add the card's id to the array of cards in the sprint
+				cards[id].sprint = i;
 			}
 		}
 
@@ -416,7 +419,7 @@ function logLists(listResults) {
 				var listId = listResults[i].id;
 				var listName = listResults[i].name;
 				var listPos = listResults[i].pos;
-				metrics.sprints[j].lists[listId] = {"listName": listName, "listPos": listPos};
+				metrics.sprints[j].lists[listId] = {"listName": listName, "listPos": listPos, "cardCount": 0, "listMS": 0};
 			}
 		}
 	}
@@ -428,10 +431,16 @@ $('#list-cycle').on('click', function() {
 })
 
 function listCycle() {
-	for(i = 0; i < cards.index.length; i++) {
+	console.log("listCylce - 13");
+	for(i = 0; i < cards.index.length; i++) { 
 		var id = cards.index[i][0];
-		for(j = cards[id].lists.length; j > 0; j--) {
-
+		console.log(id);
+		var sprintNum = cards[id].sprint;
+		console.log(sprintNum);
+		for(j = cards[id].lists.length-1; j > 0; j--) {
+			var list = cards[id].lists[j].listId;
+			metrics.sprints[sprintNum].lists[list].listMS = metrics.sprints[sprintNum].lists[list].listMS + cards[id].lists[j].cycleMs;
+			metrics.sprints[sprintNum].lists[list].cardCount += 1;
 		}
 	}
 }
