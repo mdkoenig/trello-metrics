@@ -48,7 +48,7 @@ $('#get-list').on('click', function() {
 // use an ajax call to get the lists of the team board from Trello
 function getList() {
 	 $.ajax({
-		url: "https://api.trello.com/1/boards/59b957fde1709e3aae62b5c8/lists?key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
+		url: "https://api.trello.com/1/boards/59b957fde1709e3aae62b5c8/lists?" + key,
 		method: 'GET',
 	}).done(function(result) {
 		var json = JSON.stringify(result);
@@ -60,13 +60,28 @@ function getList() {
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+// var lists = [{"id":"5a1c3168ec582ec6b5525f77","name":"Team Backlog","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":32767.5,"subscribed":false},{"id":"59b99bfec694acd6d384a115","name":"In Dev","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":65535,"subscribed":false},{"id":"59b99c0430ddaadbe1d22d93","name":"Pull Request","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":131071,"subscribed":false},{"id":"59b99c097600a8d5c832b64f","name":"BA Review","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":196607,"subscribed":false},{"id":"59b99c0f20d57c7e366b042a","name":"508","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":262143,"subscribed":false},{"id":"59b99c13f18d666f83eade72","name":"PO Review","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":278527,"subscribed":false},{"id":"59f0d42be9f96ec56fcbc289","name":"Done (Archive all cards at once after Sprint Review)","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":368639,"subscribed":false},{"id":"5a79d8775196db7d0bf33754","name":"Closed (but not done)","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":540671,"subscribed":false}];
+
+// function List(id, name, first, last, pos) {
+// 	this.id = id;
+// 	this.name = name;
+// 	this.first = first;
+// 	this.last = last;
+// 	this.pos = pos;
+// }
+
+// function makeLists() {
+
+// }
+
 $('#get-cards').on('click', function() { // on click to get call the getCards function
 	getCards();
 })
 
 function getCards() {	// ajax call to the Trello api to get all the cards for the board with all fields
+	console.log("getCards - 1");
 	$.ajax({
-		url: "https://api.trello.com/1/search?query=59b957fde1709e3aae62b5c8&idBoards=mine&modelTypes=cards&board_fields=name%2CidOrganization&boards_limit=10&card_fields=all&cards_limit=1000&cards_page=0&card_list=true&card_attachments=false&organization_fields=name%2CdisplayName&organizations_limit=10&member_fields=avatarHash%2CfullName%2Cinitials%2Cusername%2Cconfirmed&members_limit=10&key=efce743459e4c3a5fd43630a2406f1db&token=acdd3fbc2a30d12258846ceb14813d74742608aa84c31c34a611a91ef3932c08",
+		url: "https://api.trello.com/1/search?query=59b957fde1709e3aae62b5c8&idBoards=mine&modelTypes=cards&board_fields=name%2CidOrganization&boards_limit=10&card_fields=all&cards_limit=1000&cards_page=0&card_list=true&card_attachments=false&organization_fields=name%2CdisplayName&organizations_limit=10&member_fields=avatarHash%2CfullName%2Cinitials%2Cusername%2Cconfirmed&members_limit=10&" + key,
 		method: 'GET',
 	}).done(function(result) {
 		createCards(result);	// send results to the createCards function to populate the cards object with certain information from the results
@@ -76,8 +91,8 @@ function getCards() {	// ajax call to the Trello api to get all the cards for th
 }
 
 function createCards(trello) { // function to go through the results and pull out the relevent information
+	console.log("createCards - 2");
 
-	// console.log(trello);
 	metrics.totalBatches = Math.floor(trello.cards.length/10,1)+1;
 	console.log(metrics.totalBatches);
 
@@ -91,7 +106,8 @@ function createCards(trello) { // function to go through the results and pull ou
 		var endDate = new Date(trello.cards[i].dateLastActivity); // define the card/s last date
 		var actions = [] // make a blank array for actions to be populate later
 		var shortId = "short" + trello.cards[i].idShort; // define the shortId
-		cards[id] = {"id":id,"shortId":shortId,"labels":labels,"name":name,"endDate":endDate,"startDate":"","actions":actions,"cycleMS":0}; // add all the stuff to the card object
+		var lists = [];
+		cards[id] = {"id":id,"shortId":shortId,"labels":labels,"lists": lists,"name":name,"endDate":endDate,"startDate":"","actions":actions,"cycleMS":0}; // add all the stuff to the card object
 		var index = [id,shortId];//[[id],[shortId]]; // create an index associating the id and short id
 		cards.index.push(index); // add to the index
 	}
@@ -101,6 +117,8 @@ function createCards(trello) { // function to go through the results and pull ou
 
 // find some way to put arrays of 10 cards into an array of arrays so that you can iterate through the batch API call to do 25 calls, each of which has 10 GET calls for cards
 function organizeBatches() {
+	console.log("organizeBatches - 3");
+
 	var batchCount = 0;
 	var apiCalls = "";
 	var cardsCalled = [];
@@ -129,9 +147,11 @@ function organizeBatches() {
 }
 
 function getActions(apiCalls) {
+	console.log("getActions - 4");
+
 	$.when(
 		$.ajax({
-			url: "https://api.trello.com/1/batch?urls=" + apiCalls + key,
+			url: "https://api.trello.com/1/batch?urls=" + apiCalls + "&" + key,
 			method: 'GET',
 		}).done(function(result) {
 		}).fail(function(err) {
@@ -147,63 +167,87 @@ function getActions(apiCalls) {
 }
 
 function logActions(actionResults) { 
+	console.log("logActions - 5");
+
 	for(i = 0; i < actionResults.length; i++) {	// iterate through the actions per card to relevent data
-		if(actionResults[i][200].length === 50) {
-			console.log("Big mama: " + actionResults[i][200][0].data.card.id);
-		}
-		else {
-			for(j = 0; j < actionResults[i][200].length; j++) { //interate through the number of actions for that card for relevent data
-				if(actionResults[i][200][j].type === "createCard" || actionResults[i][200][j].type === "copyCard") {
-					var id = actionResults[i][200][j].data.card.id;
-					var type = actionResults[i][200][j].type;
-					var date = new Date(actionResults[i][200][j].date);
-					cards[id].startDate = date;
-					var actionId = actionResults[i][200][j].id;
-					var old = actionResults[i][200][j].data.old;
+		var results = actionResults[i][200];
 
-					if(actionResults[i][200][j].data.listBefore !== undefined) {
-						var listBefore = actionResults[i][200][j].data.listBefore.id;
-						var listAfter = actionResults[i][200][j].data.listAfter.id;
-					}
-					else {
-						var listBefore = "";
-						var listAfter = "";
-					}
+		for(j = 0; j < results.length; j++) { //interate through the number of actions for that card for relevent data
+			if(results[j].type === "createCard" || results[j].type === "copyCard") {
+				var actionCard = new CreateAction(results, j);
+				cards[actionCard.id].actions.push(actionCard);
 				
-					var actionObject = {"date":date,"cardId":id,"type":type,"actionId":actionId,"listBefore":listBefore,"listAfter":listAfter,"old":old}; // consoldate data into an object
-					cards[id].actions.push(actionObject); // push action object to the appropriate card
-				}
-				else if(
-					(actionResults[i][200][j].type === "updateCard" && actionResults[i][200][j].data.old.hasOwnProperty("closed")) ||
-					(actionResults[i][200][j].type === "updateCard" && actionResults[i][200][j].data.old.hasOwnProperty("idList")) 
-					) {
-					var id = actionResults[i][200][j].data.card.id;
-					var type = actionResults[i][200][j].type;
-					var date = new Date(actionResults[i][200][j].date);
-					var actionId = actionResults[i][200][j].id;
-					var old = actionResults[i][200][j].data.old;
+				var lists = {"listId": actionCard.listId, "date": actionCard.date, "name": actionCard.name};
+				cards[actionCard.id].lists.push(lists);
+			}
 
-					if(actionResults[i][200][j].data.listBefore !== undefined) {
-						var listBefore = actionResults[i][200][j].data.listBefore.id;
-						var listAfter = actionResults[i][200][j].data.listAfter.id;
-					}
-					else {
-						var listBefore = "";
-						var listAfter = "";
-				}
-			
-				var actionObject = {"date":date,"cardId":id,"type":type,"actionId":actionId,"listBefore":listBefore,"listAfter":listAfter,"old":old}; // consoldate data into an object
-				cards[id].actions.push(actionObject); // push action object to the appropriate card
-				}
-				else {
-				}
+			else if(results[j].type === "updateCard" && results[j].data.old.hasOwnProperty("idList")) {
+				var actionCard = new UpdateAction(results, j); // construct new Update action object
+				cards[actionCard.id].actions.push(actionCard); // push Update to the card
+
+				var lists = {"listBefore": actionCard.listBefore, "listAfter": actionCard.listAfter, "date": actionCard.date,"nameBefore": actionCard.nameBefore, "nameAfter":actionCard.nameAfter};
+				cards[actionCard.id].lists.push(lists);
+			}
+
+			else if (results[j].type === "updateCard" && results[j].data.old.hasOwnProperty("closed")) {
+				var actionCard = new CloseActions(results, j);
+				cards[actionCard.id].actions.push(actionCard);
+				
+				var lists = {"listId": actionCard.listId, "date": actionCard.date, "name": actionCard.name};
+				cards[actionCard.id].lists.push(lists);
+			}
+		
+			else {
 			}
 		}
 	}
 }
 
-function calculateCycle()
-{
+// constructor for Create actions
+function CreateAction(results, j) {
+	this.id = results[j].data.card.id;
+	this.type = results[j].type;
+	this.date = new Date(results[j].date);
+	cards[this.id].startDate = this.date;
+	this.actionId = results[j].id;
+	this.old = results[j].data.old;
+	this.listId = results[j].data.list.id;
+	this.name = results[j].data.list.name;
+}
+
+// constructor for Update actions
+function UpdateAction(results, j) {
+	this.id = results[j].data.card.id;
+	this.type = results[j].type;
+	this.date = new Date(results[j].date);
+	cards[this.id].startDate = this.date;
+	this.actionId = results[j].id;
+	this.old = results[j].data.old;
+	if(results[j].data.listBefore === undefined) {
+	}
+	else {
+		this.listBefore = results[j].data.listBefore.id;
+		this.nameBefore = results[j].data.listBefore.name;
+		this.listAfter = results[j].data.listAfter.id;
+		this.nameAfter = results[j].data.listAfter.name;
+	}
+}
+
+// constructor for Update actions
+function CloseActions(results, j) {
+	this.id = results[j].data.card.id;
+	this.type = results[j].type;
+	this.date = new Date(results[j].date);
+	cards[this.id].startDate = this.date;
+	this.actionId = results[j].id;
+	this.old = results[j].data.old;
+	this.listId = results[j].data.list.id;
+	this.name = results[j].data.list.name;
+}
+
+function calculateCycle() {
+	console.log("calculateCycle - 6");
+
 	for(i = 0; i < cards.index.length; i++) {
 		var id = cards.index[i][0];
 		var cycle = cards[id].endDate-cards[id].startDate;
@@ -214,12 +258,13 @@ function calculateCycle()
 			cards[id].cycleMS = 0;
 		}
 	}
-
 	dateRange();
 }
 
 // find the start and final date of all the cards
 function dateRange() {
+	console.log("dateRange - 7");
+
 	var finalDate = new Date(cards[cards.index[0][0]].endDate); // establish the end date as the first card's end date
 	for(i = 0; i < cards.index.length; i++) { // go through all the cards
 		if(cards[cards.index[i][0]].endDate > finalDate) { // if the card's end date is later than the curent final date, change the final end date to the card's end date
@@ -248,6 +293,8 @@ function dateRange() {
 
 // find the start and end of all the sprints and put them into the metrics.sprints array
 function sprints(projectStart,projectEnd,length) {
+	console.log("sprints - 8");
+
 	var projectTime = convertMS(projectEnd-projectStart); // calculate the total time of the project
 	var days = projectTime.d; // find out the number of days for the project
 	var sprints = Math.floor(days/length); // find out the number of sprints within the project
@@ -270,6 +317,8 @@ function sprints(projectStart,projectEnd,length) {
 		metrics.sprints[i].sprintEnd = sprintEnd; // set the end of the sprint in the metrics object
 
 		metrics.sprints[i].name = "Sprint" + (i + 38);
+
+		metrics.sprints[i].lists = {};
 	}
 
 	addCycle();	
@@ -277,7 +326,8 @@ function sprints(projectStart,projectEnd,length) {
 
 // go through the spritns and establish the total time "used" in that sprint and a blank array for the cards in the sprint
 function addCycle() {
-// go through the spritns and establish the total time "used" in that sprint and a blank array for the cards in the sprint
+	console.log("addCycle - 9");
+
 	for(i = 0; i < metrics.sprints.length; i++) {
 		metrics.sprints[i].total = 0; // establish baselines for sprint i
 		metrics.sprints[i].cards = [];
@@ -316,6 +366,51 @@ function addCycle() {
 	for(i = 0; i < metrics.sprints.length; i++) {
 		metrics.sprints[i].cycleInt = (metrics.sprints[i].cycleAvg.d + (metrics.sprints[i].cycleAvg.h/24)) // once done with all the sprints, go through them and get an interger (okay, it's not a real integer) for the average cycle time
 	}
+	// calculateLists();
+}
+
+// go through all the changes in the list a card is on and determine how many MS they were on each list
+function calculateLists() {
+	console.log("calculateLists - 10");
+    for(i = 0; i < cards.index.length; i++) {
+    	var id = cards.index[i][0];
+
+    	for(j = cards[id].lists.length-1; j > 0; j--) {
+    		var timeInList = cards[id].lists[j-1].date - cards[id].lists[j].date;
+    		cards[id].lists[j].cycleMs = timeInList;
+    	}
+    }
+    getList()
+}
+
+// get the lists from the board
+function getLists() {
+    console.log("getLists -11");
+    
+    $.ajax({
+		url: "https://api.trello.com/1/boards/59b957fde1709e3aae62b5c8/lists?" + key,
+		method: 'GET',
+	}).done(function(result) {
+		logLists(result);
+	}).fail(function(err) {
+		throw err;
+	});
+}
+
+function logLists(listResults) {
+	console.log("logLists");
+	for(i = 0; i < listResults.length; i++) {
+		if(listResults[i].closed === true) {
+		}
+		else {
+			for(j = 0; j < metrics.sprints.length; j++) {
+				var listId = listResults[i].id;
+				var listName = listResults[i].name;
+				var listPos = listResults[i].pos;
+				metrics.sprints[j].lists[listId] = {"listName": listName, "listPos": listPos};
+			}
+		}
+	}
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -334,7 +429,7 @@ function specificBatch() {
     console.log(batchVal);
 
     $.ajax({
-		url: "https://api.trello.com/1/batch?urls=" + batchVal + key,
+		url: "https://api.trello.com/1/batch?urls=" + batchVal + "&" + key,
 		method: 'GET',
 	}).done(function(result) {
 		console.log(result);
@@ -354,7 +449,7 @@ function specificCard() {
     console.log(cardNum);
     
     $.ajax({
-		url: "https://api.trello.com/1/cards/" + cardNum + "/actions?filter=all&limit=100" + key,
+		url: "https://api.trello.com/1/cards/" + cardNum + "/actions?filter=all&limit=100" + "&" + key,
 		method: 'GET',
 	}).done(function(result) {
 		console.log(result);
@@ -377,7 +472,7 @@ function specificAction() {
     var actionNum = $('#action-num').val();
     
     $.ajax({
-		url: "https://api.trello.com/1/actions/" + actionNum + key,
+		url: "https://api.trello.com/1/actions/" + actionNum + "&" + key,
 		method: 'GET',
 	}).done(function(result) {
 		console.log(result);
@@ -466,13 +561,7 @@ function convertMS(ms) {
 
 // D3 IS SCARY AND EXCITING
 
-var n = 6; // number of layers
-var m = 12; // number of samples per layer
-var stack = d3.stack();
-//var data = d3.range(n).map(function() { return bumpLayer(m, .1); });
-
-var data = [[2.7,2,3.2,4.3,2.8,2.5,2.5,3.8,4,4,3,5.3],[0,0,0.3,0.3,0.8,0.4,0,0,1.5,0.3,0,0.7],[0,0.3,0.3,0,0,0,0.3,0,0,0,0,0],[1.5,3.3,0.8,0.8,0.2,0.4,0.3,0.5,1,1.3,1.7,1],[0,0.3,0.3,0,0,0,0.3,0.3,0,0,0,0],[0.8,1,2,0.5,0.4,0.2,1.8,0.3,0,0,0.5,0]];
-
+// an attempt to change the data with a function
 $('#new-data').on('click', function() { 
 	newData();
 })
@@ -483,6 +572,17 @@ function newData() {
 	reset();
 }
 
+// Base information
+
+var n = 6; // number of layers
+var m = 12; // number of samples per layer
+var stack = d3.stack();
+//var data = d3.range(n).map(function() { return bumpLayer(m, .1); }); // random data for an example (I think)
+
+var data = [[2.7,2,3.2,4.3,2.8,2.5,2.5,3.8,4,4,3,5.3],[0,0,0.3,0.3,0.8,0.4,0,0,1.5,0.3,0,0.7],[0,0.3,0.3,0,0,0,0.3,0,0,0,0,0],[1.5,3.3,0.8,0.8,0.2,0.4,0.3,0.5,1,1.3,1.7,1],[0,0.3,0.3,0,0,0,0.3,0.3,0,0,0,0],[0.8,1,2,0.5,0.4,0.2,1.8,0.3,0,0,0.5,0]];
+var dates = ["Aug 30","Sep 13","Sep 27","Oct 11","Oct 25","Nov 8","Nov 22","Dec 6","Dec 20","Jan 3","Jan 17","Jan 31"];
+
+// base D3 magic
 	var formatPercent = d3.format(".0%");
 	var formatNumber = d3.format("");
 
@@ -495,15 +595,13 @@ function newData() {
 
 //console.log(data);
 
-var layers = stack.keys(d3.range(n))(data),
-    yStackMax = d3.max(layers, function(layer) { return d3.max(layer, function(d) { return d[1]; }); }),
-    yGroupMax = d3.max(layers, function(layer) { return d3.max(layer, function(d) { return d[1] - d[0]; }); });
+var layers = stack.keys(d3.range(n))(data);
+var yStackMax = d3.max(layers, function(layer) { return d3.max(layer, function(d) { return d[1]; }); });
+var yGroupMax = d3.max(layers, function(layer) { return d3.max(layer, function(d) { return d[1] - d[0]; }); });
 
-var margin = {top: 40, right: 10, bottom: 20, left: 35},
-    width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
-
-var dates = ["Aug 30","Sep 13","Sep 27","Oct 11","Oct 25","Nov 8","Nov 22","Dec 6","Dec 20","Jan 3","Jan 17","Jan 31"];
+var margin = {top: 40, right: 10, bottom: 20, left: 35};
+var width = 960 - margin.left - margin.right;
+var height = 500 - margin.top - margin.bottom;
 
 var x = d3.scaleBand()
     .domain(d3.range(m)) //dates || d3.range(m)
@@ -538,14 +636,14 @@ var svg = d3.select("body").append("svg")
 
 var layer = svg.selectAll(".layer")
     .data(layers)
-  .enter().append("g")
+	.enter().append("g")
     .attr("class", "layer")
     .attr("id", function(d) { return d.key; })
     .style("fill", function(d, i) { return color(i); });
 
 var rect = layer.selectAll("rect")
     .data(function(d) { return d; })
-  .enter().append("rect")
+ 	.enter().append("rect")
     .attr("x", function(d, i) { return x(i); })
     .attr("y", height)
     .attr("width", x.bandwidth())
@@ -576,116 +674,11 @@ var timeout = setTimeout(function() {
     }, 2000);
 }, 2000);
 
-function reset() {
-	console.log("Got here");
-	// var data = [];
-
-	// function makeData(data) {
-	//     data = data;
-	//}
-
-	//console.log(data);
-
-	formatPercent = d3.format(".0%");
-	formatNumber = d3.format("");
-
-	// transpose data
-	data = data[0].map(function(col, i) { 
-	    return data.map(function(row) { 
-	        return row[i] 
-	    })
-	});
-
-	//console.log(data);
-
-	layers = stack.keys(d3.range(n))(data);
-	yStackMax = d3.max(layers, function(layer) { return d3.max(layer, function(d) { return d[1]; }); });
-	yGroupMax = d3.max(layers, function(layer) { return d3.max(layer, function(d) { return d[1] - d[0]; }); });
-
-	margin = {top: 40, right: 10, bottom: 20, left: 35};
-	width = 960 - margin.left - margin.right;
-	height = 500 - margin.top - margin.bottom;
-
-	dates = ["Aug 30","Sep 13","Sep 27","Oct 11","Oct 25","Nov 8","Nov 22","Dec 6","Dec 20","Jan 3","Jan 17","Jan 31"];
-
-	x = d3.scaleBand()
-	    .domain(d3.range(m)) //dates || d3.range(m)
-	    .rangeRound([0, width])
-	    .padding(0.1)
-	    .align(0.1);
-
-	y = d3.scaleLinear()
-	    .domain([0, yStackMax])
-	    .rangeRound([height, 0]);
-
-	color = d3.scaleLinear()
-	    .domain([0, n - 1])
-	    .range(["#aad", "#556"]);
-
-	xAxis = d3.axisBottom()
-	    .scale(x)
-	    .tickSize(0)
-	    .tickPadding(6)
-	    .tickFormat(function(d, i) { return dates[i]});
-
-	yAxis = d3.axisLeft()
-	    .scale(y)
-	    .tickSize(2)
-	    .tickPadding(6);
-
-	// svg = d3.select("body").append("svg")
-	//     .attr("width", width + margin.left + margin.right)
-	//     .attr("height", height + margin.top + margin.bottom)
-	//   .append("g")
-	//     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-	layer = svg.selectAll(".layer")
-	    .data(layers)
-	  .enter().append("g")
-	    .attr("class", "layer")
-	    .attr("id", function(d) { return d.key; })
-	    .style("fill", function(d, i) { return color(i); });
-
-	rect = layer.selectAll("rect")
-	    .data(function(d) { return d; })
-	  .enter().append("rect")
-	    .attr("x", function(d, i) { return x(i); })
-	    .attr("y", height)
-	    .attr("width", x.bandwidth())
-	    .attr("height", 0);
-
-	rect.transition()
-	    .delay(function(d, i) {return i * 10; })
-	    .attr("y", function(d) { return y(d[1]); })
-	    .attr("height", function(d) { return y(d[0]) - y(d[1]); });
-
-	svg.append("g")
-	    .attr("class", "x axis")
-	    .attr("transform", "translate(0," + height + ")")
-	    .call(xAxis);
-
-	svg.append("g")
-	    .attr("class", "y axis")
-	    .attr("transform", "translate(" + 0 + ",0)")
-	    .style("font-size", "10px")
-	    .call(yAxis);
-
-	d3.selectAll("input").on("change", change);
-
-	timeout = setTimeout(function() { 
-	    d3.select("input[value=\"grouped\"]").property("checked", true).each(change);
-	    setTimeout(function() {
-	        d3.select("input[value=\"percent\"]").property("checked", true).each(change);
-	    }, 2000);
-	}, 2000);
-}
-
 function change() {
     clearTimeout(timeout);
     if (this.value === "grouped") transitionGrouped();
     else if (this.value === "stacked") transitionStacked();
     else if (this.value === "percent") transitionPercent();
-
 }
 
 function transitionGrouped() {
@@ -736,8 +729,8 @@ function transitionPercent() {
         .delay(function(d, i) { return i * 10; })
         .attr("y", function(d) { 
             var total = d3.sum(d3.values(d.data));
-            return y(d[1] / total); })
-        .attr("height", function(d) { 
+            return y(d[1] / total); }
+)        .attr("height", function(d) { 
             var total = d3.sum(d3.values(d.data));
             //console.log("d[0]: " + d[0] + " | d[1] / y num: " + d[1] + " | total: " + total);
             //console.log(d);
@@ -752,5 +745,4 @@ function transitionPercent() {
         .delay(500)
         .duration(500)
         .call(yAxis)
-
 }
