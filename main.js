@@ -40,28 +40,6 @@ $('#sprints').on('click', function() {
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-// FUTURE FUNCTIONALITY
-
-// create an onlick function to get the call the getList function
-$('#get-list').on('click', function() { 
-	getList();
-})
-
-// use an ajax call to get the lists of the team board from Trello
-function getList() {
-	 $.ajax({
-		url: "https://api.trello.com/1/boards/59b957fde1709e3aae62b5c8/lists?" + key,
-		method: 'GET',
-	}).done(function(result) {
-		var json = JSON.stringify(result);
-	}).fail(function(err) {
-		throw err;
-	});
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 // var lists = [{"id":"5a1c3168ec582ec6b5525f77","name":"Team Backlog","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":32767.5,"subscribed":false},{"id":"59b99bfec694acd6d384a115","name":"In Dev","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":65535,"subscribed":false},{"id":"59b99c0430ddaadbe1d22d93","name":"Pull Request","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":131071,"subscribed":false},{"id":"59b99c097600a8d5c832b64f","name":"BA Review","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":196607,"subscribed":false},{"id":"59b99c0f20d57c7e366b042a","name":"508","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":262143,"subscribed":false},{"id":"59b99c13f18d666f83eade72","name":"PO Review","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":278527,"subscribed":false},{"id":"59f0d42be9f96ec56fcbc289","name":"Done (Archive all cards at once after Sprint Review)","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":368639,"subscribed":false},{"id":"5a79d8775196db7d0bf33754","name":"Closed (but not done)","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":540671,"subscribed":false}];
 
 // function List(id, name, first, last, pos) {
@@ -325,6 +303,7 @@ function sprints(projectStart,projectEnd,length) {
 
 		metrics.sprints[i].lists = {};
 	}
+	metrics.sprints.undefined = {"cards": []};
 
 	addCycle();	
 }
@@ -345,6 +324,12 @@ function addCycle() {
 				metrics.sprints[i].cards.push(cards[id]); // and add the card's id to the array of cards in the sprint
 				cards[id].sprint = i;
 			}
+			else if (i === metrics.sprints.length-1 && cards[id].sprint === undefined) {
+				cards[id].sprint = undefined;
+			}
+			else {
+			}
+
 		}
 
 		if(metrics.sprints[i].total === 0) {
@@ -400,9 +385,10 @@ function getLists() {
     console.log("getLists -11");
     
     $.ajax({
-		url: "https://api.trello.com/1/boards/59b957fde1709e3aae62b5c8/lists?" + key,
+		url: "https://api.trello.com/1/boards/59b957fde1709e3aae62b5c8/lists?filter=all&" + key,
 		method: 'GET',
 	}).done(function(result) {
+		// console.log(result);
 		logLists(result);
 	}).fail(function(err) {
 		throw err;
@@ -412,35 +398,39 @@ function getLists() {
 function logLists(listResults) {
 	console.log("logLists - 12");
 	for(i = 0; i < listResults.length; i++) {
-		if(listResults[i].closed === true) {
-		}
-		else {
-			for(j = 0; j < metrics.sprints.length; j++) {
-				var listId = listResults[i].id;
-				var listName = listResults[i].name;
-				var listPos = listResults[i].pos;
-				metrics.sprints[j].lists[listId] = {"listName": listName, "listPos": listPos, "cardCount": 0, "listMS": 0};
-			}
+		for(j = 0; j < metrics.sprints.length; j++) {
+			var listId = listResults[i].id;
+			var listName = listResults[i].name;
+			// console.log(listName);
+			var listPos = listResults[i].pos;
+			metrics.sprints[j].lists[listId] = {"listName": listName, "listPos": listPos, "cardCount": 0, "listMS": 0};
 		}
 	}
-}
-
-// create an onlick function to get the call the getList function
-$('#list-cycle').on('click', function() { 
 	listCycle();
-})
+}
 
 function listCycle() {
 	console.log("listCylce - 13");
+
 	for(i = 0; i < cards.index.length; i++) { 
 		var id = cards.index[i][0];
-		console.log(id);
+		// console.log(id);
 		var sprintNum = cards[id].sprint;
-		console.log(sprintNum);
-		for(j = cards[id].lists.length-1; j > 0; j--) {
-			var list = cards[id].lists[j].listId;
-			metrics.sprints[sprintNum].lists[list].listMS = metrics.sprints[sprintNum].lists[list].listMS + cards[id].lists[j].cycleMs;
-			metrics.sprints[sprintNum].lists[list].cardCount += 1;
+		// console.log("sprintNum: " + sprintNum);
+
+		if(cards[id].sprint == undefined) {
+			// console.log("undefined(i/j): " + id + ": " + i + "/" + j);
+			metrics.sprints.undefined.cards.push(cards[id]);
+			// console.log(cards[id]);
+			// console.log("sprintNum: " + sprintNum);
+		}
+		else {
+			for(j = cards[id].lists.length-1; j > 0; j--) {
+				var list = cards[id].lists[j].listId;
+				metrics.sprints[sprintNum].lists[list].listMS = metrics.sprints[sprintNum].lists[list].listMS + cards[id].lists[j].cycleMs;
+				// console.log(i,j);
+				metrics.sprints[sprintNum].lists[list].cardCount += 1;
+			}
 		}
 	}
 }
@@ -628,7 +618,12 @@ var dates = ["Aug 30","Sep 13","Sep 27","Oct 11","Oct 25","Nov 8","Nov 22","Dec 
 //console.log(data);
 
 var layers = stack.keys(d3.range(n))(data);
-var yStackMax = d3.max(layers, function(layer) { return d3.max(layer, function(d) { return d[1]; }); });
+var yStackMax = d3.max(layers, function(layer) {
+	return d3.max(layer, function(d) {
+		return d[1];
+	});
+});
+
 var yGroupMax = d3.max(layers, function(layer) { return d3.max(layer, function(d) { return d[1] - d[0]; }); });
 
 var margin = {top: 40, right: 10, bottom: 20, left: 35};
