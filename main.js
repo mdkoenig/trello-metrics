@@ -159,10 +159,9 @@ function getActions(apiCalls) {
 		})
 	).then(function(data, textStatus, jqXHR) {
 		logActions(data);
-		metrics.currentBatch = metrics.currentBatch + 1;
-		if(metrics.currentBatch === metrics.totalBatches) {
-			calculateCycle();
-		}
+		// metrics.currentBatch = metrics.currentBatch + 1;
+		// if(metrics.currentBatch === metrics.totalBatches) {
+		// 	calculateCycle();
 	});
 }
 
@@ -200,6 +199,11 @@ function logActions(actionResults) {
 			else {
 			}
 		}
+	}
+
+	metrics.currentBatch = metrics.currentBatch + 1;
+	if(metrics.currentBatch === metrics.totalBatches) {
+		calculateCycle();
 	}
 }
 
@@ -288,7 +292,6 @@ function dateRange() {
 	var sprintLength = parseInt($("#sprint-length").val());
 
 	sprints(startDate,finalDate,sprintLength);
-	console.log("done");
 }
 
 // find the start and end of all the sprints and put them into the metrics.sprints array
@@ -366,8 +369,14 @@ function addCycle() {
 	for(i = 0; i < metrics.sprints.length; i++) {
 		metrics.sprints[i].cycleInt = (metrics.sprints[i].cycleAvg.d + (metrics.sprints[i].cycleAvg.h/24)) // once done with all the sprints, go through them and get an interger (okay, it's not a real integer) for the average cycle time
 	}
-	// calculateLists();
+	calculateLists();
 }
+
+// create an onlick function calculate lists
+$('#calculate-lists').on('click', function() { 
+	calculateLists();
+})
+
 
 // go through all the changes in the list a card is on and determine how many MS they were on each list
 function calculateLists() {
@@ -380,7 +389,7 @@ function calculateLists() {
     		cards[id].lists[j].cycleMs = timeInList;
     	}
     }
-    getList()
+    getLists()
 }
 
 // get the lists from the board
@@ -398,7 +407,7 @@ function getLists() {
 }
 
 function logLists(listResults) {
-	console.log("logLists");
+	console.log("logLists - 12");
 	for(i = 0; i < listResults.length; i++) {
 		if(listResults[i].closed === true) {
 		}
@@ -409,6 +418,20 @@ function logLists(listResults) {
 				var listPos = listResults[i].pos;
 				metrics.sprints[j].lists[listId] = {"listName": listName, "listPos": listPos};
 			}
+		}
+	}
+}
+
+// create an onlick function to get the call the getList function
+$('#list-cycle').on('click', function() { 
+	listCycle();
+})
+
+function listCycle() {
+	for(i = 0; i < cards.index.length; i++) {
+		var id = cards.index[i][0];
+		for(j = cards[id].lists.length; j > 0; j--) {
+
 		}
 	}
 }
