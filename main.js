@@ -600,192 +600,133 @@ function convertMS(ms) {
 // D3 IS SCARY AND EXCITING
 
 // an attempt to change the data with a function
+
 $('#new-data').on('click', function() { 
 	newData();
 })
 
 function newData() {
-	var newData = [[5.4,4,6.4,8.6,5.6,5,5,7.6,8,8,6,10.6],[0,0,0.6,0.6,1.6,0.8,0,0,3,0.6,0,1.4],[0,0.6,0.6,0,0,0,0.6,0,0,0,0,0],[3,6.6,1.6,1.6,0.4,0.8,0.6,1,2,2.6,3.4,2],[0,0.6,0.6,0,0,0,0.6,0.6,0,0,0,0],[1.6,2,4,1,0.8,0.4,3.6,0.6,0,0,1,0]];
-	data = newData;
-	reset();
+	dataset = [];
+	for(i = 0; i < metrics.sprints.length; i++) {
+		var number = Math.round(metrics.sprints[i].cycleInt*10)/10;
+		dataset.push(number);
+	}
+	maxHeight = d3.max(newData);
+
+	update();
 }
 
-// Base information
 
-var n = 6; // number of layers
-var m = 12; // number of samples per layer
-var stack = d3.stack();
-//var data = d3.range(n).map(function() { return bumpLayer(m, .1); }); // random data for an example (I think)
+var dataset = [15, 8, 25, 4];
+var maxHeight = 100;
+var width = 500;
+var height = 100;
+var padding = 5;
 
-var data = [[2.7,2,3.2,4.3,2.8,2.5,2.5,3.8,4,4,3,5.3],[0,0,0.3,0.3,0.8,0.4,0,0,1.5,0.3,0,0.7],[0,0.3,0.3,0,0,0,0.3,0,0,0,0,0],[1.5,3.3,0.8,0.8,0.2,0.4,0.3,0.5,1,1.3,1.7,1],[0,0.3,0.3,0,0,0,0.3,0.3,0,0,0,0],[0.8,1,2,0.5,0.4,0.2,1.8,0.3,0,0,0.5,0]];
-var dates = ["Aug 30","Sep 13","Sep 27","Oct 11","Oct 25","Nov 8","Nov 22","Dec 6","Dec 20","Jan 3","Jan 17","Jan 31"];
+// http://alignedleft.com/tutorials/d3/axes/
 
-// base D3 magic
-	var formatPercent = d3.format(".0%");
-	var formatNumber = d3.format("");
+//Create scale functions
+var xScale = d3.scale.linear()
+					 .domain([0, d3.max(dataset, function(d) { return d[0]; })])
+					 .range(0,width);
 
-	// transpose data
-	data = data[0].map(function(col, i) { 
-	    return data.map(function(row) { 
-	        return row[i] 
-	    })
-	});
+//Define X axis
+var xAxis = d3.svg.axis()
+				  .scale(xScale)
+				  .orient("bottom")
+				  .ticks(5);
 
-//console.log(data);
 
-var layers = stack.keys(d3.range(n))(data);
-var yStackMax = d3.max(layers, function(layer) {
-	return d3.max(layer, function(d) {
-		return d[1];
-	});
+// Updates the visualization 
+function update() {
+
+	console.log("update");
+	// Update selection: Resize and position existing 
+	// DOM elements with data bound to them.
+ 	var selection = d3.select("#output")
+		.selectAll(".bar").data(dataset)
+    	.style("height", function(d){return d*4 + "px";})
+		.style("margin-top", function(d){return 100 - (d*4) + "px";}) // maxHeight
+		.text(function(d) { return d; });
+
+
+  // Enter selection: Create new DOM elements for added 
+  // data items, resize and position them and attach a 
+  // mouse click handler.
+	selection.enter()
+		.append("div").attr("class", "bar")
+		.style("height", function(d){return d*4 + "px";})
+		.style("margin-top", function(d){return 100 - (d*4) + "px";	}) // maxHeight
+		.on("click", function(e, i){ 
+			dataset.splice(i, 1);
+			update();
+		})
+		.style("text-align", "center")
+		.text(function(d) { return d; });
+
+
+	// Exit selection: Remove elements without data from the DOM
+	selection.exit().remove();
+
+
+	// Print underlying data array
+	d3.select("#dataset").text(dataset);
+
+	selection.enter()
+		.append("g").attr("class", "axis")
+		.attr("transform", "translate(0," + (height - padding) + ")")
+		.call(xAxis);
+
+		//Create labels
+		svg.selectAll("div")
+		   .data(dataset)
+		   .enter()
+		   .append("div")
+		   .text(function(d) {
+		   		return d[0] + "," + d[1];
+		   })
+		   .attr("x", function(d) {
+		   		return xScale(d[0]);
+		   })
+		   .attr("font-family", "sans-serif")
+		   .attr("font-size", "11px")
+		   .attr("fill", "red");
+
+	//Create X axis
+	selection.append("g")
+		.attr("class", "axis")
+		.attr("transform", "translate(0," + (height - padding) + ")")
+		.call(xAxis);
+};
+
+// manually enter new datum
+d3.select("#new-bar").on("click", function(e){
+	
+	// d3.select("#d3").text("D3a:" + 
+	var x = d3.select("#bar-num").property("value");
+	console.log(x);
+	dataset.push(x);
+
+	update();
 });
 
-var yGroupMax = d3.max(layers, function(layer) { return d3.max(layer, function(d) { return d[1] - d[0]; }); });
+// Add a new datum to the set
+d3.select("#add-btn").on("click", function(e){
+	
+	if (dataset.length < 10) dataset.push(Math.round(Math.random() * 25));
 
-var margin = {top: 40, right: 10, bottom: 20, left: 35};
-var width = 960 - margin.left - margin.right;
-var height = 500 - margin.top - margin.bottom;
+	update();
 
-var x = d3.scaleBand()
-    .domain(d3.range(m)) //dates || d3.range(m)
-    .rangeRound([0, width])
-    .padding(0.1)
-    .align(0.1);
+});
 
-var y = d3.scaleLinear()
-    .domain([0, yStackMax])
-    .rangeRound([height, 0]);
+// Fire when DOM is available
+var domReady = function(callback) {
+  document.readyState === "interactive" || document.readyState === "complete" ? callback() : document.addEventListener("DOMContentLoaded", callback);
+};
 
-var color = d3.scaleLinear()
-    .domain([0, n - 1])
-    .range(["#aad", "#556"]);
+domReady(function() {
+  update();
+});
 
-var xAxis = d3.axisBottom()
-    .scale(x)
-    .tickSize(0)
-    .tickPadding(6)
-    .tickFormat(function(d, i) { return dates[i]});
 
-var yAxis = d3.axisLeft()
-    .scale(y)
-    .tickSize(2)
-    .tickPadding(6);
 
-var svg = d3.select("body").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-var layer = svg.selectAll(".layer")
-    .data(layers)
-	.enter().append("g")
-    .attr("class", "layer")
-    .attr("id", function(d) { return d.key; })
-    .style("fill", function(d, i) { return color(i); });
-
-var rect = layer.selectAll("rect")
-    .data(function(d) { return d; })
- 	.enter().append("rect")
-    .attr("x", function(d, i) { return x(i); })
-    .attr("y", height)
-    .attr("width", x.bandwidth())
-    .attr("height", 0);
-
-rect.transition()
-    .delay(function(d, i) {return i * 10; })
-    .attr("y", function(d) { return y(d[1]); })
-    .attr("height", function(d) { return y(d[0]) - y(d[1]); });
-
-svg.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + height + ")")
-    .call(xAxis);
-
-svg.append("g")
-    .attr("class", "y axis")
-    .attr("transform", "translate(" + 0 + ",0)")
-    .style("font-size", "10px")
-    .call(yAxis);
-
-d3.selectAll("input").on("change", change);
-
-var timeout = setTimeout(function() { 
-    d3.select("input[value=\"grouped\"]").property("checked", true).each(change);
-    setTimeout(function() {
-        d3.select("input[value=\"percent\"]").property("checked", true).each(change);
-    }, 2000);
-}, 2000);
-
-function change() {
-    clearTimeout(timeout);
-    if (this.value === "grouped") transitionGrouped();
-    else if (this.value === "stacked") transitionStacked();
-    else if (this.value === "percent") transitionPercent();
-}
-
-function transitionGrouped() {
-    y.domain([0, yGroupMax]);
-
-    rect.transition()
-        .duration(500)
-        .delay(function(d, i) { return i * 10; })
-        .attr("x", function(d, i, j) { return x(i) + x.bandwidth() / n * parseInt(this.parentNode.id); })
-        .attr("width", x.bandwidth() / n)
-    .transition()
-        .attr("y", function(d) { return height - (y(d[0]) - y(d[1])); })
-        .attr("height", function(d) { return y(d[0]) - y(d[1]); });
-
-    yAxis.tickFormat(formatNumber)
-    svg.selectAll(".y.axis").transition()
-        .delay(500)
-        .duration(500)
-        .call(yAxis)
-}
-
-function transitionStacked() {
-    y.domain([0, yStackMax]);
-    console.log("yStackMax: " + yStackMax);
-
-    rect.transition()
-        .duration(500)
-        .delay(function(d, i) { return i * 10; })
-        .attr("y", function(d) { return y(d[1]); })
-        .attr("height", function(d) { return y(d[0]) - y(d[1]); })
-    .transition()
-        .attr("x", function(d, i) { return x(i); })
-        .attr("width", x.bandwidth());
-
-    yAxis.tickFormat(formatNumber)
-    svg.selectAll(".y.axis").transition()
-        .delay(500)
-        .duration(500)
-        .call(yAxis)
-
-}
-
-function transitionPercent() {
-    y.domain([0, 1]); // .5
-
-    rect.transition()
-        .duration(500)
-        .delay(function(d, i) { return i * 10; })
-        .attr("y", function(d) { 
-            var total = d3.sum(d3.values(d.data));
-            return y(d[1] / total); }
-)        .attr("height", function(d) { 
-            var total = d3.sum(d3.values(d.data));
-            //console.log("d[0]: " + d[0] + " | d[1] / y num: " + d[1] + " | total: " + total);
-            //console.log(d);
-            return y(d[0] / total) - y(d[1] / total); })
-    .transition()
-        .attr("x", function(d, i) { return x(i); })
-        .attr("width", x.bandwidth());
-
-    yAxis.tickFormat(formatPercent)
-
-    svg.selectAll(".y.axis").transition()
-        .delay(500)
-        .duration(500)
-        .call(yAxis)
-}
