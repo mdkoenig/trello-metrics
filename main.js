@@ -105,13 +105,25 @@ function organizeBatches() {
 
 	for(i = 0; i < cards.index.length; i++) { //cards.index.length
 		if(batchCount+1 === 10 || i === cards.index.length-1) {
-			apiCalls = apiCalls + "%2C%2Fcards%2F" + cards.index[i][0] + "%2Factions%3Ffilter%3Dall%26limit%3D100"; // add the next api call to the batch
-			cardsCalled.push(cards.index[i][0]);
+			if(batchCount === 0) { // if there's only one card in the batch %2 needs to be removed from the api call to make it work
+				apiCalls = apiCalls + "%2Fcards%2F" + cards.index[i][0] + "%2Factions%3Ffilter%3Dall%26limit%3D100"; // add the next api call to the batch
+				cardsCalled.push(cards.index[i][0]);
 
-			getActions(apiCalls, status);
+				getActions(apiCalls, status);
 
-			batchCount = 0; // reset batchCount for next batch of apis
-			apiCalls = ""; // reset api list for next batch of apis
+				batchCount = 0; // reset batchCount for next batch of apis
+				apiCalls = ""; // reset api list for next batch of apis
+			}
+			
+			else { // otherwise, whenever the index is done or there are 10 cards in a batch, make a call and reset everything else
+				apiCalls = apiCalls + "%2C%2Fcards%2F" + cards.index[i][0] + "%2Factions%3Ffilter%3Dall%26limit%3D100"; // add the next api call to the batch
+				cardsCalled.push(cards.index[i][0]);
+
+				getActions(apiCalls, status);
+
+				batchCount = 0; // reset batchCount for next batch of apis
+				apiCalls = ""; // reset api list for next batch of apis
+			}
 		}
 		else if(batchCount > 0) {
 			batchCount +=1; // count number of apis up to get to ten for a batch
@@ -520,9 +532,13 @@ $('#json-cards').on('click', function() { // make the cards into a JSON
 })
 
 function jsonCards() {
-	var json = JSON.stringify(cards);
+	var jsonCards = JSON.stringify(cards);
 	console.log("JSON cards");
-	console.log(json);
+	console.log(jsonCards);
+
+	var jsonMetrics = JSON.stringify(metrics);
+	console.log("JSON metrics");
+	console.log(jsonMetrics);
 }
 
 $('#not-get').on('click', function() { 
@@ -531,7 +547,7 @@ $('#not-get').on('click', function() {
 
 function notGet() {
     fullCards();
-	calculateCycle();
+	displayCards();
 }
 
 $('#full-cards').on('click', function() { // get the full cards stored within the js
