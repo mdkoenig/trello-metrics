@@ -54,6 +54,11 @@ $('#sprints').on('click', function() {
 
 // }
 
+
+$('#start').on('click', function() { // on click to get call the getCards function
+	getCards();
+})
+
 $('#get-cards').on('click', function() { // on click to get call the getCards function
 	getCards();
 })
@@ -73,7 +78,7 @@ function getCards() {	// ajax call to the Trello api to get all the cards for th
 function createCards(trello) { // function to go through the results and pull out the relevent information
 	console.log("createCards - 2");
 
-	metrics.totalBatches = Math.floor(trello.cards.length/10,1)+1;
+	metrics.totalBatches = Math.ceil(trello.cards.length/10,1);
 	console.log(metrics.totalBatches);
 
 	for(i = 0; i < trello.cards.length; i++) { // go through each card int he array
@@ -83,7 +88,9 @@ function createCards(trello) { // function to go through the results and pull ou
 			labels.push(trello.cards[i].labels[j].name);
 		}
 		var name = trello.cards[i].name; // define the card's name
+		
 		var endDate = new Date(trello.cards[i].dateLastActivity); // define the card/s last date
+		
 		var actions = [] // make a blank array for actions to be populate later
 		var shortId = "short" + trello.cards[i].idShort; // define the shortId
 		var lists = [];
@@ -193,6 +200,8 @@ function logActions(actionResults) {
 		}
 	}
 
+	// console.log(metrics.currentBatch + " : " + metrics.totalBatches);
+
 	metrics.currentBatch = metrics.currentBatch + 1;
 	if(metrics.currentBatch === metrics.totalBatches) {
 		calculateCycle();
@@ -247,11 +256,14 @@ function calculateCycle() {
 	for(i = 0; i < cards.index.length; i++) {
 		var id = cards.index[i][0];
 		var cycle = cards[id].endDate-cards[id].startDate;
+		// console.log("Cycle: " + id + " is " + cycle);
 		if(cycle >= 0) {
 			cards[id].cycleMS = cycle;//convertMS(cycle);
+			cards[id].cycleDays = convertMS(cycle);
 		}
 		else {
 			cards[id].cycleMS = 0;
+			cards[id].cycleDays = 0;
 		}
 	}
 	dateRange();
@@ -273,7 +285,7 @@ function dateRange() {
 		startDate = new Date("08/30/17"); // if there is none, assume 08-30-17
 	}
 	else {
-		startDate = new Date(start);
+		startDate = new Date(startDate);
 	}
 
 	// put the starting and final dates into the metrics object
@@ -445,6 +457,14 @@ function listCycle() {
 			}
 		}
 	}
+	revealGraph();
+}
+
+function revealGraph() {
+	draw()
+	showOutput();
+	var $x = $("#display-cards");
+	$x.prop("hidden",false);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -548,6 +568,7 @@ $('#not-get').on('click', function() {
 function notGet() {
     fullCards();
 	displayCards();
+	draw();
 }
 
 $('#full-cards').on('click', function() { // get the full cards stored within the js
@@ -570,12 +591,12 @@ function showOutput() {
 
 		var $sprintHeader = $("<h3>").html(metrics.sprints[i].name + "</h3>");
 		var $sprintData = (
-			"<p>Sprint Start: " + metrics.sprints[i].sprintStart.toDateString() + 
-			"<br>Sprint End: " + metrics.sprints[i].sprintEnd.toDateString() + 
+			"<p>Sprint Start: " + metrics.sprints[i].sprintStart + // .toDateString()
+			"<br>Sprint End: " + metrics.sprints[i].sprintEnd + // .toDateString()
 			"<br>Cards: " + metrics.sprints[i].cards.length + 
 			"<br>Average card cycle time: " + days + " days");//metrics.sprints[i].cycleAvg.h/24;// + Math.round((metrics.sprints[i].cycleAvg.h/24),2));
 		
-		var $output = $("#output");
+		var $output = $("#d3-experiments");
 		$output.append($sprintHeader);
 		$output.append($sprintData);
 	}
@@ -595,138 +616,90 @@ function convertMS(ms) {
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-// D3 IS SCARY AND EXCITING
+function draw() {
+	var dataset = [];
 
-// an attempt to change the data with a function
-
-$('#new-data').on('click', function() { 
-	newData();
-})
-
-function newData() {
-	dataset = [];
-	for(i = 0; i < metrics.sprints.length; i++) {
-		var number = Math.round(metrics.sprints[i].cycleInt*10)/10;
-		dataset.push(number);
+	for(let i = 0; i < metrics.sprints.length; i++) {
+		var time = Math.round((metrics.sprints[i].cycleInt*100),2);
+		time = time/100;
+	  var sprint = parseInt(metrics.sprints[i].name.slice(6,8));
+		dataset.push([time, sprint]);
 	}
-	maxHeight = d3.max(newData);
 
-	update();
-}
+	console.log(dataset);
 
+	//Width and height
+	var w = (dataset.length * 50) + 50;
+	var h = 140;
 
-var dataset = [15, 8, 25, 4];
-var maxHeight = 100;
-var width = 500;
-var height = 100;
-var padding = 5;
+	//Create SVG element
+	var svg = d3.select("#d3-experiments")
+				.append("svg")
+				.attr("width", w)
+				.attr("height", h)
+				.style("background-color", "#e8e8e8");
 
-// http://alignedleft.com/tutorials/d3/axes/
+	var rect = svg.selectAll("rect")
+	    .data(dataset)
+	    .enter()
+	    .append("rect");
 
-//Create scale functions
-var xScale = d3.scale.linear()
-					 .domain([0, d3.max(dataset, function(d) { return d[0]; })])
-					 .range(0,width);
+	rect.attr("width", 49)
+	   .attr("height", function(d) {
+	   		return d[0] * 4;
+	   	})
+	   	.attr("y", function(d) {
+	   		return 120 - (d[0] * 4);
+	   	})
+	   	.attr("x", function(d, i) {
+	   		return (i * 50) +25 ;
+	   	})
+	   	// .attr("fill", function(d) {return "rgb(0, 0, " + (d[0] * 10) + ")";})
+	    .attr("fill", "teal");
 
-//Define X axis
-var xAxis = d3.svg.axis()
-				  .scale(xScale)
-				  .orient("bottom")
-				  .ticks(5);
-
-
-// Updates the visualization 
-function update() {
-
-	console.log("update");
-	// Update selection: Resize and position existing 
-	// DOM elements with data bound to them.
- 	var selection = d3.select("#output")
-		.selectAll(".bar").data(dataset)
-    	.style("height", function(d){return d*4 + "px";})
-		.style("margin-top", function(d){return 100 - (d*4) + "px";}) // maxHeight
-		.text(function(d) { return d; });
-
-
-  // Enter selection: Create new DOM elements for added 
-  // data items, resize and position them and attach a 
-  // mouse click handler.
-	selection.enter()
-		.append("div").attr("class", "bar")
-		.style("height", function(d){return d*4 + "px";})
-		.style("margin-top", function(d){return 100 - (d*4) + "px";	}) // maxHeight
-		.on("click", function(e, i){ 
-			dataset.splice(i, 1);
-			update();
+	svg.selectAll("text")
+		.data(dataset)
+		.enter()
+		.append("text")
+		.text(function(d) {
+			return d[0];
 		})
-		.style("text-align", "center")
-		.text(function(d) { return d; });
+		.attr("y", function(d) {
+	   		return 120 - (d[0] * 4) - 1;
+	   	})
+	   	.attr("x", function(d, i) {
+	   		return (i * 50) + 50;
+	   	})
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "11px")
+		.attr("text-anchor", "middle");
 
+	// var xScale = d3.scaleLinear()
+	//   .domain([0, d3.max(dataset, function(d) { return d[1]; })])
+	//   .range([0, w]);
 
-	// Exit selection: Remove elements without data from the DOM
-	selection.exit().remove();
+	// var yScale = d3.scaleLinear()
+	//   .domain([0, 100])
+	//   .rangeRound([0, h]);
 
+	var xScale = d3.scaleLinear()
+	  .domain([37.5, d3.max(dataset, function(d) { return d[1]; })])
+	  .range([0, w - 75]);
 
-	// Print underlying data array
-	d3.select("#dataset").text(dataset);
+	var yScale = d3.scaleLinear()
+	  .domain([25, 0])
+	  .rangeRound([0, 100]);
 
-	selection.enter()
-		.append("g").attr("class", "axis")
-		.attr("transform", "translate(0," + (height - padding) + ")")
-		.call(xAxis);
+	// Add the x Axis
+	svg.append("g")
+	  .attr("transform", "translate(25,120)")
+	  .attr("class", "axis")
+	  .call(d3.axisBottom(xScale)
+	  	.ticks(dataset.length));
 
-		//Create labels
-		svg.selectAll("div")
-		   .data(dataset)
-		   .enter()
-		   .append("div")
-		   .text(function(d) {
-		   		return d[0] + "," + d[1];
-		   })
-		   .attr("x", function(d) {
-		   		return xScale(d[0]);
-		   })
-		   .attr("font-family", "sans-serif")
-		   .attr("font-size", "11px")
-		   .attr("fill", "red");
-
-	//Create X axis
-	selection.append("g")
-		.attr("class", "axis")
-		.attr("transform", "translate(0," + (height - padding) + ")")
-		.call(xAxis);
-};
-
-// manually enter new datum
-d3.select("#new-bar").on("click", function(e){
-	
-	// d3.select("#d3").text("D3a:" + 
-	var x = d3.select("#bar-num").property("value");
-	console.log(x);
-	dataset.push(x);
-
-	update();
-});
-
-// Add a new datum to the set
-d3.select("#add-btn").on("click", function(e){
-	
-	if (dataset.length < 10) dataset.push(Math.round(Math.random() * 25));
-
-	update();
-
-});
-
-// Fire when DOM is available
-var domReady = function(callback) {
-  document.readyState === "interactive" || document.readyState === "complete" ? callback() : document.addEventListener("DOMContentLoaded", callback);
-};
-
-domReady(function() {
-  update();
-});
-
-
-
+	svg.append("g")
+	  .attr("transform", "translate(25, 20)")
+	  .call(d3.axisLeft(yScale)
+	    .ticks(5));
+}
