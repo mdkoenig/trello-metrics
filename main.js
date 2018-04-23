@@ -54,11 +54,6 @@ $('#sprints').on('click', function() {
 
 // }
 
-
-$('#start').on('click', function() { // on click to get call the getCards function
-	getCards();
-})
-
 $('#get-cards').on('click', function() { // on click to get call the getCards function
 	getCards();
 })
@@ -601,20 +596,27 @@ $('#show-output').on('click', function() {
 
 // once clicked, show some info from the Sprints
 function showOutput() {
+	var $experiments = $("#d3-experiments");
+	$experiments.append($("<br><br><table width='50%' id='summary'><tr><th>Sprint</th><th>Cards</th><th>Cycle Time</th></tr>"));
 	for(i = 0; i < metrics.sprints.length; i++) {
 		var days = metrics.sprints[i].cycleAvg.d;
 		days = days + Math.round(metrics.sprints[i].cycleAvg.h/24*100,4)/100;
 
-		var $sprintHeader = $("<h3>").html(metrics.sprints[i].name + "</h3>");
-		var $sprintData = (
-			"<p>Sprint Start: " + metrics.sprints[i].sprintStart + // .toDateString()
-			"<br>Sprint End: " + metrics.sprints[i].sprintEnd + // .toDateString()
-			"<br>Cards: " + metrics.sprints[i].cards.length + 
-			"<br>Average card cycle time: " + days + " days");//metrics.sprints[i].cycleAvg.h/24;// + Math.round((metrics.sprints[i].cycleAvg.h/24),2));
+		// var $rowOfStuff = $("<tr><td>").html(metrics.sprints[i].name + "</td></tr>");
+		var $rowOfStuff = $("<tr><td>" + metrics.sprints[i].name + "</td><td>" + metrics.sprints[i].cards.length + "</td><td>" + days + " days</td></tr>");
+
+		// var $sprintHeader = $("<h3>").html(metrics.sprints[i].name + "</h3>");
+		// var $sprintData = (
+		// 	"<p>Sprint Start: " + metrics.sprints[i].sprintStart + // .toDateString()
+		// 	"<br>Sprint End: " + metrics.sprints[i].sprintEnd + // .toDateString()
+		// 	"<br>Cards: " + metrics.sprints[i].cards.length + 
+		// 	"<br>Average card cycle time: " + days + " days");//metrics.sprints[i].cycleAvg.h/24;// + Math.round((metrics.sprints[i].cycleAvg.h/24),2));
 		
-		var $output = $("#d3-experiments");
-		$output.append($sprintHeader);
-		$output.append($sprintData);
+		var $output = $("#summary");
+		// $output.append($sprintHeader);
+		// $output.append($sprintData);
+
+		$output.append($rowOfStuff);
 	}
 }
 
@@ -643,7 +645,13 @@ function draw() {
 		dataset.push([time, sprint]);
 	}
 
+	console.log("dataset");
 	console.log(dataset);
+
+	var yMax = d3.max(dataset, function(d) { return d[0] });
+	var factor = Math.floor(100 / yMax,1);
+	console.log("Factor: " + factor);
+	var chartYMax = 100/factor;
 
 	//Width and height
 	var w = (dataset.length * 50) + 50;
@@ -662,31 +670,21 @@ function draw() {
 	    .append("rect");
 
 	rect.attr("width", 49)
-	   .attr("height", function(d) {
-	   		return d[0] * 6;
-	   	})
-	   	.attr("y", function(d) {
-	   		return 120 - (d[0] * 6);
-	   	})
-	   	.attr("x", function(d, i) {
-	   		return (i * 50) +25 ;
-	   	})
+	   .attr("height", function(d) { return d[0] * factor; })
+	   	.attr("y", function(d) { return 120 - (d[0] * factor); })
+	   	.attr("x", function(d, i) { return (i * 50) +25 ; })
 	   	// .attr("fill", function(d) {return "rgb(0, 0, " + (d[0] * 10) + ")";})
-	    .attr("fill", "teal");
+	    .attr("fill", "teal")
+	    .attr("title", function(d) { return d[0] })
+	    .attr("class", "dialog");
 
 	svg.selectAll("text")
 		.data(dataset)
 		.enter()
 		.append("text")
-		.text(function(d) {
-			return d[0];
-		})
-		.attr("y", function(d) {
-	   		return 120 - (d[0] * 6) - 1;
-	   	})
-	   	.attr("x", function(d, i) {
-	   		return (i * 50) + 50;
-	   	})
+		.text(function(d) { return d[0]; })
+		.attr("y", function(d) { return 120 - (d[0] * factor) - 1; })
+	   	.attr("x", function(d, i) { return (i * 50) + 50; })
 		.attr("font-family", "sans-serif")
 		.attr("font-size", "11px")
 		.attr("text-anchor", "middle");
@@ -704,7 +702,7 @@ function draw() {
 	  .range([0, w - 75]);
 
 	var yScale = d3.scaleLinear()
-	  .domain([15, 0])
+	  .domain([chartYMax, 0])
 	  .rangeRound([0, 100]);
 
 	// Add the x Axis
@@ -717,5 +715,11 @@ function draw() {
 	svg.append("g")
 	  .attr("transform", "translate(25, 20)")
 	  .call(d3.axisLeft(yScale)
-	    .ticks(3));
+	    .ticks(5));
+
+	$('.dialog').on('click', function() { 
+		$(".dialog").dialog();
+		// console.log("click");
+	})
 }
+

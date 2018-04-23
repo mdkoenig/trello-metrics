@@ -60,4 +60,19 @@ p#info {
 	shape-rendering: crispEdges;
 }
 
+/*#summary table, td, th {
+	border: 1px solid black;
+}
 
+#summary table {
+	border-collapse: collapse;
+}*/
+
+table, td, th {
+	border: 1px solid black;
+	text-align: center;
+}
+
+table {
+	border-collapse: collapse;
+}
