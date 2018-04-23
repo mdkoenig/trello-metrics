@@ -223,6 +223,12 @@ function CreateAction(results, j) {
 // constructor for Update actions
 function UpdateAction(results, j) {
 	this.id = results[j].data.card.id;
+
+	if(this.id === "5abe8bbe3d3e0ecfa1a05a91")
+	{
+		console.log(results, j);
+	}
+
 	this.type = results[j].type;
 	this.date = new Date(results[j].date);
 	cards[this.id].startDate = this.date;
@@ -235,6 +241,10 @@ function UpdateAction(results, j) {
 		this.nameBefore = results[j].data.listBefore.name;
 		this.listAfter = results[j].data.listAfter.id;
 		this.nameAfter = results[j].data.listAfter.name;
+
+		if(results[j].data.listAfter.id === "59ba90e88560a24c20e4a7a3" || results[j].data.listAfter.id === "59cbcf4fcf8d0dc60028b1f2" || results[j].data.listAfter.id === "59f0d42be9f96ec56fcbc289" ) {
+			cards[this.id].endDate = new Date(results[j].date);
+		}
 	}
 }
 
@@ -309,8 +319,8 @@ function sprints(projectStart,projectEnd,length) {
 	metrics.sprints = []; // create an array within the metrics object for the sprints
 	
 	for(let i = 0; i < sprints; i++) {
-		var name = "sprint" + i; // create the sprint name
-		metrics.sprints[i] = {}; // creat the sprint ojbect within teh sprints array
+		// var name = "sprint" + i; // create the sprint name
+		metrics.sprints[i] = {}; // create the sprint object within the sprints array
 		
 		var day = projectStart.getDate(); // getting the day the project starts
 		
@@ -336,17 +346,23 @@ function sprints(projectStart,projectEnd,length) {
 function addCycle() {
 	console.log("addCycle - 9");
 
+	console.log(cards);
+	console.log(metrics);
+
 	for(i = 0; i < metrics.sprints.length; i++) {
 		metrics.sprints[i].total = 0; // establish baselines for sprint i
 		metrics.sprints[i].cards = [];
 
-// go through all the cards
+		// go through all the cards
 		for(j = 0; j < cards.index.length; j++) {
 			var id = cards.index[j][0]; // get the card id
+
+
+
 			if(cards[id].endDate > metrics.sprints[i].sprintStart && cards[id].endDate < metrics.sprints[i].sprintEnd) { // if the end date of the card fit into the sprint start and end dates
 				metrics.sprints[i].total = metrics.sprints[i].total + cards[id].cycleMS; // then add the card's cycle time to the sprint's cycle time
 				metrics.sprints[i].cards.push(cards[id]); // and add the card's id to the array of cards in the sprint
-				cards[id].sprint = i;
+				cards[id].sprint = "sprint" + (i + 38); // herehere
 			}
 			else if (i === metrics.sprints.length-1 && cards[id].sprint === undefined) {
 				cards[id].sprint = undefined;
@@ -438,9 +454,6 @@ function listCycle() {
 
 	for(i = 0; i < cards.index.length; i++) { 
 		var id = cards.index[i][0];
-		// console.log(id);
-		var sprintNum = cards[id].sprint;
-		// console.log("sprintNum: " + sprintNum);
 
 		if(cards[id].sprint == undefined) {
 			// console.log("undefined(i/j): " + id + ": " + i + "/" + j);
@@ -449,7 +462,10 @@ function listCycle() {
 			// console.log("sprintNum: " + sprintNum);
 		}
 		else {
+			var sprintNum = parseInt(cards[id].sprint.slice(6,8)) - 38;
+
 			for(j = cards[id].lists.length-1; j > 0; j--) {
+				
 				var list = cards[id].lists[j].listId;
 				metrics.sprints[sprintNum].lists[list].listMS = metrics.sprints[sprintNum].lists[list].listMS + cards[id].lists[j].cycleMs;
 				// console.log(i,j);
@@ -647,10 +663,10 @@ function draw() {
 
 	rect.attr("width", 49)
 	   .attr("height", function(d) {
-	   		return d[0] * 4;
+	   		return d[0] * 6;
 	   	})
 	   	.attr("y", function(d) {
-	   		return 120 - (d[0] * 4);
+	   		return 120 - (d[0] * 6);
 	   	})
 	   	.attr("x", function(d, i) {
 	   		return (i * 50) +25 ;
@@ -666,7 +682,7 @@ function draw() {
 			return d[0];
 		})
 		.attr("y", function(d) {
-	   		return 120 - (d[0] * 4) - 1;
+	   		return 120 - (d[0] * 6) - 1;
 	   	})
 	   	.attr("x", function(d, i) {
 	   		return (i * 50) + 50;
@@ -688,7 +704,7 @@ function draw() {
 	  .range([0, w - 75]);
 
 	var yScale = d3.scaleLinear()
-	  .domain([25, 0])
+	  .domain([15, 0])
 	  .rangeRound([0, 100]);
 
 	// Add the x Axis
@@ -701,5 +717,5 @@ function draw() {
 	svg.append("g")
 	  .attr("transform", "translate(25, 20)")
 	  .call(d3.axisLeft(yScale)
-	    .ticks(5));
+	    .ticks(3));
 }
