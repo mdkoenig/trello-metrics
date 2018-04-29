@@ -21,11 +21,12 @@ $("#default-options").on("click", function() {
 function defaultOptions() {
 	// get the key and token from the key.js file if they exist. 
 	try {
-		$("#board-val").val(board);
+		$("#board-val").val(board1);
 		$("#key-val").val(key);
 		$("#token-val").val(token);
 		$("#start-date").val(startDate);
-		$("#first-sprint").val(firstSprint);
+		$("#first-sprint").val(firstSprint1);
+		$("#data-type").val("real");
 	}
 
 	// if they don't exist, then prompt the user to enter them
@@ -48,6 +49,7 @@ function otherOptions() {
 		$("#token-val").val(token);
 		$("#start-date").val(startDate);
 		$("#first-sprint").val(firstSprint2);
+		$("#data-type").val("real");
 	}
 
 	// if they don't exist, then prompt the user to enter them
@@ -73,7 +75,7 @@ $( function() {
 
 // USER ACTIONS
 
-$('#submit').on('click', function() { 
+$('#start').on('click', function() { 
 	start();
 })
 
@@ -84,6 +86,9 @@ function start() {
 	keyToken = "key=" + $("#key-val").val() + "&token=" + $("#token-val").val();
 	board = $("#board-val").val();
 	firstSprint = parseInt($("#first-sprint").val());
+
+	$("#start").attr("hidden", true);
+	$("#reset").attr("hidden", false);
 
 	if(dataType === "real") {
 		getCards();
@@ -119,17 +124,23 @@ $('#reset').on('click', function() {
 // reset the entire page
 function reset() {
 	// esbalish an object for the cards that exist on trello
-	var cards = {"index":[]};
+	cards = {"index":[]};
 
 	// establish and object of the project-wide metrics
-	var metrics = {totalBatches: 0, currentBatch: 0};
+	metrics = {totalBatches: 0, currentBatch: 0};
 
-	var d3 = $("#d3-experiments");
-	console.log(d3);
-	var del = $("#d3-experiments svg");
+	var del = $("#output");
 	del.remove();
-	console.log($("d3-experiments"));
 
+	$("#options-check").prop("checked", true);
+	optionsCheck();
+	$("#start").attr("hidden", false);
+	$("#reset").attr("hidden", true);
+	$("#board-val").val("");
+	$("#key-val").val("");
+	$("#token-val").val("");
+	$("#start-date").val("");
+	$("#first-sprint").val("");
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -655,6 +666,8 @@ function notGet() {
 	displayCards();
 	draw();
 	showOutput();
+	$("#options-check").prop("checked", false);
+	optionsCheck();
 }
 
 $('#full-cards').on('click', function() { // get the full cards stored within the js
@@ -671,7 +684,7 @@ $('#show-output').on('click', function() {
 
 // once clicked, show some info from the Sprints
 function showOutput() {
-	var $experiments = $("#d3-experiments");
+	var $experiments = $("#output");
 	$experiments.append($("<br><br><table width='50%' id='summary'><tr><th>Sprint</th><th>Cards</th><th>Cycle Time</th></tr>"));
 	for(i = 0; i < metrics.sprints.length; i++) {
 		var days = metrics.sprints[i].cycleAvg.d;
@@ -713,6 +726,8 @@ function convertMS(ms) {
 function draw() {
 	var dataset = [];
 
+	console.log(dataset);
+
 	for(let i = 0; i < metrics.sprints.length; i++) {
 		var time = Math.round((metrics.sprints[i].cycleInt*100),2);
 		time = time/100;
@@ -721,8 +736,10 @@ function draw() {
 	}
 
 	var yMax = d3.max(dataset, function(d) { return d[0] });
-	var factor = Math.floor(100 / yMax,1);
-	var chartYMax = 100/factor;
+	var xMin = d3.min(dataset, function(d) { return d[1] });
+	var xMax = d3.max(dataset, function(d) { return d[1] });
+
+	console.log(xMin, xMax);
 
 	//Width and height
 	var w = (dataset.length * 50) + 50;
@@ -733,11 +750,19 @@ function draw() {
 	z.append("<div id='output'></div>");
 
 	//Create SVG element
-	var svg = d3.select("#d3-experiments")
+	var svg = d3.select("#output")
 				.append("svg")
 				.attr("width", w)
 				.attr("height", h)
 				.style("background-color", "#e8e8e8");
+
+	var xScale = d3.scaleLinear()
+	  .domain([xMin-0.5, xMax])
+	  .range([0, w - 75]);
+
+	var yScale = d3.scaleLinear()
+	  .domain([yMax, 0])
+	  .rangeRound([0, 100]); //
 
 	var rect = svg.selectAll("rect")
 	    .data(dataset)
@@ -745,11 +770,11 @@ function draw() {
 	    .append("rect");
 
 	rect.attr("width", 49)
-	   .attr("height", function(d) { return d[0] * factor; })
-	   	.attr("y", function(d) { return 120 - (d[0] * factor); })
+	   .attr("height", function(d) { return 100-yScale(d[0]); })
+	   	.attr("y", function(d) { return 20 + yScale(d[0]); })
 	   	.attr("x", function(d, i) { return (i * 50) +25 ; })
 	   	// .attr("fill", function(d) {return "rgb(0, 0, " + (d[0] * 10) + ")";})
-	    .attr("fill", "teal")
+	    .attr("fill", "#2D2E75")
 	    .attr("title", function(d) { return d[0] })
 	    .attr("class", "dialog");
 
@@ -758,27 +783,11 @@ function draw() {
 		.enter()
 		.append("text")
 		.text(function(d) { return d[0]; })
-		.attr("y", function(d) { return 120 - (d[0] * factor) - 1; })
+		.attr("y", function(d) { return 20 + (yScale(d[0])) - 1; })
 	   	.attr("x", function(d, i) { return (i * 50) + 50; })
 		.attr("font-family", "sans-serif")
 		.attr("font-size", "11px")
 		.attr("text-anchor", "middle");
-
-	// var xScale = d3.scaleLinear()
-	//   .domain([0, d3.max(dataset, function(d) { return d[1]; })])
-	//   .range([0, w]);
-
-	// var yScale = d3.scaleLinear()
-	//   .domain([0, 100])
-	//   .rangeRound([0, h]);
-
-	var xScale = d3.scaleLinear()
-	  .domain([37.5, d3.max(dataset, function(d) { return d[1]; })])
-	  .range([0, w - 75]);
-
-	var yScale = d3.scaleLinear()
-	  .domain([chartYMax, 0])
-	  .rangeRound([0, 100]);
 
 	// Add the x Axis
 	svg.append("g")
@@ -792,9 +801,8 @@ function draw() {
 	  .call(d3.axisLeft(yScale)
 	    .ticks(5));
 
-	$('.dialog').on('click', function() { 
-		$(".dialog").dialog();
-		// console.log("click");
-	})
+	// $('.dialog').on('click', function() { 
+	// 	$(".dialog").dialog();
+	// })
 }
 

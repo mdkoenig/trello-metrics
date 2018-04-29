@@ -16,18 +16,18 @@
 			<h1>Trello Metrics</h1>
 		</div>
 
-		<button class="coral" id="default-options">Use defaults</button> <button class="coral" id="other-options">Other options</button><br>
-
 		<div class="vert">
-				<p>Options</p>
+			<p>Options</p>
 
-				<label class="switch">
-					<input id="options-check" type="checkbox" checked>
-					<span class="slider round"></span>
-				</label><br>
-			</div>
+			<label class="switch">
+				<input id="options-check" type="checkbox" checked>
+				<span class="slider round"></span>
+			</label><br>
+		</div>
 
 		<div id="options">
+			<button class="coral" id="default-options">Use defaults</button> <button class="coral" id="other-options">Other options</button><br>
+			<br>
 			Board Id:<br>
 			<input size="30" id="board-val"></input><br>
 			Trello Key: <br>
@@ -47,16 +47,19 @@
 				<option value="real">Real Data</option>
 				<option value="mock">Mock Data</option>
 			</select><br>
-			<br>
 		</div>
 		
 		<div id="decisions">
-			<button id="submit">Submit</button><br>
-			<br>
-			<button id="reset">Reset</button><br>
+			<p>
+				<button id="start">Submit</button>
+			</p>
+			
+			<p>
+				<button id="reset" hidden="true">Reset</button>
+			</p>
 		</div>
 		<div class="loader"></div>
-		<br>
+
 		<div id="d3-experiments">
 		</div>
 	</div>
