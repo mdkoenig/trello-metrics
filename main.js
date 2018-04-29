@@ -11,57 +11,137 @@ var metrics = {totalBatches: 0, currentBatch: 0};
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-// USER INPUTED INFORMATION
+// Define the default values if the user wants to use the key.js files
 
-// use the date picker to select the start date that you'd like to look at your sprints from
-$("#submit").on('click', function() {
-	var startDate = $("#start-date").val();
+$("#default-options").on("click", function() {
+	defaultOptions();
 })
+
+// use the default options from key.js
+function defaultOptions() {
+	// get the key and token from the key.js file if they exist. 
+	try {
+		$("#board-val").val(board);
+		$("#key-val").val(key);
+		$("#token-val").val(token);
+		$("#start-date").val(startDate);
+		$("#first-sprint").val(firstSprint);
+	}
+
+	// if they don't exist, then prompt the user to enter them
+	catch(err) {
+		$("#options").prepend("<span class='important'>Please enter values</span><br>");
+		console.log("no values");
+	}
+}
+
+$("#other-options").on("click", function() {
+	otherOptions();
+})
+
+// use the default options from key.js
+function otherOptions() {
+	// get the key and token from the key.js file if they exist. 
+	try {
+		$("#board-val").val(board2);
+		$("#key-val").val(key);
+		$("#token-val").val(token);
+		$("#start-date").val(startDate);
+		$("#first-sprint").val(firstSprint2);
+	}
+
+	// if they don't exist, then prompt the user to enter them
+	catch(err) {
+		$("#options").prepend("<span class='important'>Please enter values</span><br>");
+		console.log("no values");
+	}
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// USER INPUTED INFORMATION
 
 // add the datepicker function to the id of "start-date"
 $( function() {
-	$( "#start-date" ).datepicker();
+	// $("#start-date").val("08/30/17")
+	$("#start-date").datepicker();
 });
 
-// onclick to call fillDate
-$('#fill-date').on('click', function() {
-	fillDate();
+//------------------------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// USER ACTIONS
+
+$('#submit').on('click', function() { 
+	start();
 })
 
-// fill the date picker with the hard coded date of 08-30-17
-function fillDate() {
-	$('#start-date').val("08-30-17");
+// get started with either real or mock data
+function start() {
+	var dataType = $("#data-type").val();
+
+	keyToken = "key=" + $("#key-val").val() + "&token=" + $("#token-val").val();
+	board = $("#board-val").val();
+	firstSprint = parseInt($("#first-sprint").val());
+
+	if(dataType === "real") {
+		getCards();
+	}
+	else if(dataType === "mock") {
+		notGet();
+	}
+	else {
+		console.log("Problem");
+	}
 }
 
-$('#sprints').on('click', function() { 
-	calculateSprints();
+$("#options-check").change(function() {
+	optionsCheck();
 })
+
+function optionsCheck() {
+	var isChecked = $("#options-check").prop("checked");
+	if(isChecked === true) 	{
+		console.log("Show options");
+		$("#options").css("display", "block");
+	}
+	else {
+		console.log("Hide options");
+		$("#options").css("display", "none");
+	}
+}
+
+$('#reset').on('click', function() { 
+	reset();
+})
+
+// reset the entire page
+function reset() {
+	// esbalish an object for the cards that exist on trello
+	var cards = {"index":[]};
+
+	// establish and object of the project-wide metrics
+	var metrics = {totalBatches: 0, currentBatch: 0};
+
+	var d3 = $("#d3-experiments");
+	console.log(d3);
+	var del = $("#d3-experiments svg");
+	del.remove();
+	console.log($("d3-experiments"));
+
+}
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-// var lists = [{"id":"5a1c3168ec582ec6b5525f77","name":"Team Backlog","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":32767.5,"subscribed":false},{"id":"59b99bfec694acd6d384a115","name":"In Dev","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":65535,"subscribed":false},{"id":"59b99c0430ddaadbe1d22d93","name":"Pull Request","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":131071,"subscribed":false},{"id":"59b99c097600a8d5c832b64f","name":"BA Review","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":196607,"subscribed":false},{"id":"59b99c0f20d57c7e366b042a","name":"508","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":262143,"subscribed":false},{"id":"59b99c13f18d666f83eade72","name":"PO Review","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":278527,"subscribed":false},{"id":"59f0d42be9f96ec56fcbc289","name":"Done (Archive all cards at once after Sprint Review)","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":368639,"subscribed":false},{"id":"5a79d8775196db7d0bf33754","name":"Closed (but not done)","closed":false,"idBoard":"59b957fde1709e3aae62b5c8","pos":540671,"subscribed":false}];
-
-// function List(id, name, first, last, pos) {
-// 	this.id = id;
-// 	this.name = name;
-// 	this.first = first;
-// 	this.last = last;
-// 	this.pos = pos;
-// }
-
-// function makeLists() {
-
-// }
-
-$('#get-cards').on('click', function() { // on click to get call the getCards function
-	getCards();
-})
-
-function getCards() {	// ajax call to the Trello api to get all the cards for the board with all fields
+// get the cards from the Trello API 
+function getCards() {
 	console.log("getCards - 1");
+	$(".loader").css("display","block");
+
 	$.ajax({
-		url: "https://api.trello.com/1/search?query=59b957fde1709e3aae62b5c8&idBoards=mine&modelTypes=cards&board_fields=name%2CidOrganization&boards_limit=10&card_fields=all&cards_limit=1000&cards_page=0&card_list=true&card_attachments=false&organization_fields=name%2CdisplayName&organizations_limit=10&member_fields=avatarHash%2CfullName%2Cinitials%2Cusername%2Cconfirmed&members_limit=10&" + key,
+		url: "https://api.trello.com/1/search?query=" + board + "&idBoards=mine&modelTypes=cards&board_fields=name%2CidOrganization&boards_limit=10&card_fields=all&cards_limit=1000&cards_page=0&card_list=true&card_attachments=false&organization_fields=name%2CdisplayName&organizations_limit=10&member_fields=avatarHash%2CfullName%2Cinitials%2Cusername%2Cconfirmed&members_limit=10&" + keyToken,
 		method: 'GET',
 	}).done(function(result) {
 		createCards(result);	// send results to the createCards function to populate the cards object with certain information from the results
@@ -70,11 +150,11 @@ function getCards() {	// ajax call to the Trello api to get all the cards for th
 	});
 }
 
-function createCards(trello) { // function to go through the results and pull out the relevent information
+// create all the cards from the board in the cards object
+function createCards(trello) {
 	console.log("createCards - 2");
 
-	metrics.totalBatches = Math.ceil(trello.cards.length/10,1);
-	console.log(metrics.totalBatches);
+	metrics.totalBatches = Math.ceil(trello.cards.length/10,1); // figure out how many batches are needed to get all the details
 
 	for(i = 0; i < trello.cards.length; i++) { // go through each card int he array
 		var id = trello.cards[i].id; // define the card's id
@@ -145,7 +225,7 @@ function getActions(apiCalls) {
 
 	$.when(
 		$.ajax({
-			url: "https://api.trello.com/1/batch?urls=" + apiCalls + "&" + key,
+			url: "https://api.trello.com/1/batch?urls=" + apiCalls + "&" + keyToken,
 			method: 'GET',
 		}).done(function(result) {
 		}).fail(function(err) {
@@ -218,12 +298,6 @@ function CreateAction(results, j) {
 // constructor for Update actions
 function UpdateAction(results, j) {
 	this.id = results[j].data.card.id;
-
-	if(this.id === "5abe8bbe3d3e0ecfa1a05a91")
-	{
-		console.log(results, j);
-	}
-
 	this.type = results[j].type;
 	this.date = new Date(results[j].date);
 	cards[this.id].startDate = this.date;
@@ -328,7 +402,7 @@ function sprints(projectStart,projectEnd,length) {
 		metrics.sprints[i].sprintStart = sprintStart; // set the start of the sprint in the metrics object
 		metrics.sprints[i].sprintEnd = sprintEnd; // set the end of the sprint in the metrics object
 
-		metrics.sprints[i].name = "Sprint" + (i + 38);
+		metrics.sprints[i].name = "Sprint" + (i + firstSprint);
 
 		metrics.sprints[i].lists = {};
 	}
@@ -340,9 +414,6 @@ function sprints(projectStart,projectEnd,length) {
 // go through the spritns and establish the total time "used" in that sprint and a blank array for the cards in the sprint
 function addCycle() {
 	console.log("addCycle - 9");
-
-	console.log(cards);
-	console.log(metrics);
 
 	for(i = 0; i < metrics.sprints.length; i++) {
 		metrics.sprints[i].total = 0; // establish baselines for sprint i
@@ -357,7 +428,7 @@ function addCycle() {
 			if(cards[id].endDate > metrics.sprints[i].sprintStart && cards[id].endDate < metrics.sprints[i].sprintEnd) { // if the end date of the card fit into the sprint start and end dates
 				metrics.sprints[i].total = metrics.sprints[i].total + cards[id].cycleMS; // then add the card's cycle time to the sprint's cycle time
 				metrics.sprints[i].cards.push(cards[id]); // and add the card's id to the array of cards in the sprint
-				cards[id].sprint = "sprint" + (i + 38); // herehere
+				cards[id].sprint = "sprint" + (i + firstSprint); // herehere
 			}
 			else if (i === metrics.sprints.length-1 && cards[id].sprint === undefined) {
 				cards[id].sprint = undefined;
@@ -420,7 +491,7 @@ function getLists() {
     console.log("getLists -11");
     
     $.ajax({
-		url: "https://api.trello.com/1/boards/59b957fde1709e3aae62b5c8/lists?filter=all&" + key,
+		url: "https://api.trello.com/1/boards/" + board + "/lists?filter=all&" + keyToken,
 		method: 'GET',
 	}).done(function(result) {
 		// console.log(result);
@@ -457,7 +528,7 @@ function listCycle() {
 			// console.log("sprintNum: " + sprintNum);
 		}
 		else {
-			var sprintNum = parseInt(cards[id].sprint.slice(6,8)) - 38;
+			var sprintNum = parseInt(cards[id].sprint.slice(6,8)) - firstSprint;
 
 			for(j = cards[id].lists.length-1; j > 0; j--) {
 				
@@ -472,10 +543,13 @@ function listCycle() {
 }
 
 function revealGraph() {
+	$(".loader").css("display","none");
 	draw()
 	showOutput();
 	var $x = $("#display-cards");
 	$x.prop("hidden",false);
+	$("#options-check").prop("checked", false);
+	optionsCheck();
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -494,7 +568,7 @@ function specificBatch() {
     console.log(batchVal);
 
     $.ajax({
-		url: "https://api.trello.com/1/batch?urls=" + batchVal + "&" + key,
+		url: "https://api.trello.com/1/batch?urls=" + batchVal + "&" + keyToken,
 		method: 'GET',
 	}).done(function(result) {
 		console.log(result);
@@ -514,7 +588,7 @@ function specificCard() {
     console.log(cardNum);
     
     $.ajax({
-		url: "https://api.trello.com/1/cards/" + cardNum + "/actions?filter=all&limit=100" + "&" + key,
+		url: "https://api.trello.com/1/cards/" + cardNum + "/actions?filter=all&limit=100" + "&" + keyToken,
 		method: 'GET',
 	}).done(function(result) {
 		console.log(result);
@@ -537,7 +611,7 @@ function specificAction() {
     var actionNum = $('#action-num').val();
     
     $.ajax({
-		url: "https://api.trello.com/1/actions/" + actionNum + "&" + key,
+		url: "https://api.trello.com/1/actions/" + actionNum + "&" + keyToken,
 		method: 'GET',
 	}).done(function(result) {
 		console.log(result);
@@ -580,6 +654,7 @@ function notGet() {
     fullCards();
 	displayCards();
 	draw();
+	showOutput();
 }
 
 $('#full-cards').on('click', function() { // get the full cards stored within the js
@@ -645,17 +720,17 @@ function draw() {
 		dataset.push([time, sprint]);
 	}
 
-	console.log("dataset");
-	console.log(dataset);
-
 	var yMax = d3.max(dataset, function(d) { return d[0] });
 	var factor = Math.floor(100 / yMax,1);
-	console.log("Factor: " + factor);
 	var chartYMax = 100/factor;
 
 	//Width and height
 	var w = (dataset.length * 50) + 50;
 	var h = 140;
+
+	//Create div for output
+	var z = $("#d3-experiments");
+	z.append("<div id='output'></div>");
 
 	//Create SVG element
 	var svg = d3.select("#d3-experiments")
